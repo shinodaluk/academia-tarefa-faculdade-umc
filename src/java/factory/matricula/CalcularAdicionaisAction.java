@@ -95,21 +95,21 @@ public class CalcularAdicionaisAction implements ICommand {
         ServicoAdicionalDao adicionaisDao = new ServicoAdicionalDao();
         try {
             for (String codigo : codigos) {
+                ServicoAdicional adicional = adicionaisDao.consultarPorCodigo(codigo);
                 switch (codigo) {
                     case "BIOIMPEDANCIA":
-                        composto = new Bioimpedancia(composto);
+                        composto = new Bioimpedancia(composto, adicional);
                         break;
                     case "CADEIRA_MASSAGEM":
-                        composto = new CadeiraMassagem(composto);
+                        composto = new CadeiraMassagem(composto, adicional);
                         break;
                     case "PRE_TREINO":
-                        composto = new PreTreino(composto);
+                        composto = new PreTreino(composto, adicional);
                         break;
                     default:
                         throw new IllegalArgumentException("Código de adicional não reconhecido.");
                 }
 
-                ServicoAdicional adicional = adicionaisDao.consultarPorCodigo(codigo);
                 adicionaisSelecionados.add(Map.of(
                         "codigo", adicional.getCodigo(),
                         "descricao", adicional.getDescricao(),

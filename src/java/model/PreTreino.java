@@ -10,8 +10,8 @@ package model;
  */
 public class PreTreino extends AdicionaisMatricula{
     
-    public PreTreino(Servico servicodecorator) {
-        super(servicodecorator, "PRE_TREINO");
+    public PreTreino(Servico servicodecorator, ServicoAdicional adicional) {
+        super(servicodecorator, adicional, "PRE_TREINO");
     }
     
     @Override

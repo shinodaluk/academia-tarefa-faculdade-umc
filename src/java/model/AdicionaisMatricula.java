@@ -1,30 +1,20 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package model;
 
-import dao.ServicoAdicionalDao;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.util.Objects;
 
-/**
- *
- * @author alunocmc
- */
-public abstract class AdicionaisMatricula implements Servico{
-    
+/** Decorator abstrato: acrescenta um serviço adicional ao serviço decorado. */
+public abstract class AdicionaisMatricula implements Servico {
+
     protected final Servico servicodecorator;
     private final ServicoAdicional adicional;
 
-    protected AdicionaisMatricula(Servico servicodecorator, String codigoAdicional) {
+    protected AdicionaisMatricula(Servico servicodecorator, ServicoAdicional adicional, String codigoEsperado) {
         this.servicodecorator = Objects.requireNonNull(servicodecorator, "O serviço base é obrigatório.");
-        try {
-            this.adicional = new ServicoAdicionalDao().consultarPorCodigo(codigoAdicional);
-        } catch (ClassNotFoundException | SQLException ex) {
-            throw new IllegalStateException(
-                    "Não foi possível carregar o adicional '" + codigoAdicional + "' do banco de dados.", ex);
+        this.adicional = Objects.requireNonNull(adicional, "O serviço adicional é obrigatório.");
+        if (!codigoEsperado.equals(adicional.getCodigo())) {
+            throw new IllegalArgumentException(
+                    "Adicional '" + adicional.getCodigo() + "' não corresponde a " + codigoEsperado + ".");
         }
     }
 
@@ -37,5 +27,4 @@ public abstract class AdicionaisMatricula implements Servico{
                 .add(adicional.getValorMensal())
                 .doubleValue();
     }
-    
 }

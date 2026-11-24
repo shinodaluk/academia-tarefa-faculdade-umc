@@ -10,8 +10,8 @@ package model;
  */
 public class Bioimpedancia extends AdicionaisMatricula{
     
-    public Bioimpedancia(Servico servicodecorator) {
-        super(servicodecorator, "BIOIMPEDANCIA");
+    public Bioimpedancia(Servico servicodecorator, ServicoAdicional adicional) {
+        super(servicodecorator, adicional, "BIOIMPEDANCIA");
     }
     
     @Override

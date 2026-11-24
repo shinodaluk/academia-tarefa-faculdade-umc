@@ -10,8 +10,8 @@ package model;
  */
 public class CadeiraMassagem extends AdicionaisMatricula {
     
-    public CadeiraMassagem(Servico servicodecorator) {
-        super(servicodecorator, "CADEIRA_MASSAGEM");
+    public CadeiraMassagem(Servico servicodecorator, ServicoAdicional adicional) {
+        super(servicodecorator, adicional, "CADEIRA_MASSAGEM");
     }
     
     @Override

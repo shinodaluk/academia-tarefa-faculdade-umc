@@ -26,6 +26,7 @@ Projeto acadêmico desenvolvido em Java (Servlet + JSP), sem framework de aplica
 | Utilitários | Apache Commons Lang3 3.20.0, Commons Text 1.15.0 |
 | Front-end | Vue 3 via CDN (sem build) |
 | IDE / build | NetBeans + Ant |
+| Testes | JUnit 5.11.4 (Jupiter) |
 
 ## Estrutura
 
@@ -41,6 +42,8 @@ src/java/
     ├── docker-compose.yml MySQL para desenvolvimento
     ├── htmls/             Protótipos das telas
     └── jar/               Bibliotecas usadas pelo projeto
+test/             Testes unitários (JUnit 5)
+lib/              JUnit Console Standalone
 web/              Páginas JSP, CSS e JS
 ```
 
@@ -59,14 +62,16 @@ Usado para compor o valor mensal da matrícula com serviços adicionais.
 
 ```java
 Servico servico = matricula;
-servico = new Bioimpedancia(servico);
-servico = new PreTreino(servico);
+servico = new Bioimpedancia(servico, bioimpedancia);
+servico = new PreTreino(servico, preTreino);
 
 servico.custo();        // valor do plano + bioimpedância + pré-treino
 servico.getDescricao(); // "Mensal, Bioimpedância, Pré-treino"
 ```
 
-Os valores e descrições de cada adicional vêm da tabela `servico_adicional`.
+Cada decorator recebe o seu `ServicoAdicional` (código, descrição e valor) pelo construtor. Em produção
+esses dados vêm da tabela `servico_adicional`; nos testes, são criados em memória. O decorator não acessa
+o banco e rejeita um adicional de código diferente do seu.
 
 ### Outros padrões
 
@@ -112,6 +117,24 @@ docker exec -i academia-mysql mysql -uroot -psistema_root_dev < src/java/docs/da
 4. Execute (**Run**). A aplicação abre em `http://localhost:8080/WebApplication1`.
 
 A conexão com o banco é configurada em `src/java/util/DBConnector.java`.
+
+## Testes
+
+Testes unitários em `test/`, com JUnit 5. Não dependem de banco nem de servidor.
+
+| Classe | O que cobre |
+| --- | --- |
+| `model.AdicionaisMatriculaTest` | Cada decorator soma seu valor e sua descrição, encadeamento de vários decorators, ordem da descrição, soma sem erro de ponto flutuante, base intacta e validação dos argumentos |
+| `model.MatriculaTest` | `Matricula` como componente concreto do decorator e erro quando o plano não foi carregado |
+
+Para rodar pelo terminal (PowerShell, precisa só do JDK):
+
+```powershell
+.	estes.ps1
+```
+
+O script compila o pacote `model` e os testes em `build/testes` e roda a suíte com o JUnit Console.
+No NetBeans, os testes ficam em **Test Packages** e o JUnit já está no classpath de testes do projeto.
 
 ## Rotas
 
