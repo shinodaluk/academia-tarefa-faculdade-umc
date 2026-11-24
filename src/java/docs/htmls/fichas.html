@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fichas de treino — Sistema Academia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/modernist.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
+</head>
+<body>
+
+<script>window.CONTEXTO = '';</script>
+
+<!-- JSP: <script type="application/json" id="dados-fichas">${fichasJson}</script> -->
+<script type="application/json" id="dados-fichas">
+[
+ {"id":1,"aluno":"Ana Beatriz Ramos","objetivo":"Hipertrofia","instrutor":"Marcos Aurélio Dias","qtdExercicios":3,"dataCriacao":"2026-03-12"},
+ {"id":2,"aluno":"Daniela Prado","objetivo":"Emagrecimento","instrutor":"Juliana Reis","qtdExercicios":2,"dataCriacao":"2026-02-02"},
+ {"id":3,"aluno":"Fernanda Quirino","objetivo":"Condicionamento","instrutor":"Marcos Aurélio Dias","qtdExercicios":2,"dataCriacao":"2026-08-01"}
+]
+</script>
+<script type="application/json" id="dados-aviso">""</script>
+
+<div id="app" class="layout" v-cloak>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><strong>Academia Vértice</strong><div class="kicker">Gestão</div></div>
+    <nav class="sidebar-nav">
+      <a href="alunos.html">Alunos</a>
+      <a href="planos.html">Planos</a>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="instrutores.html">Instrutores</a>
+      <a class="ativo" href="fichas.html">Fichas de treino</a>
+    </nav>
+    <div class="sidebar-foot">Servlet + JSP<br>Vue 3 só na camada de tela.</div>
+  </aside>
+
+  <main class="conteudo">
+    <header class="pagina-head">
+      <div>
+        <div class="kicker">Cadastro</div>
+        <h1>Fichas de treino</h1>
+      </div>
+      <form class="acoes-head" method="get" action="fichas.html">
+        <select class="input" style="width:200px" name="objetivo" v-model="filtroObjetivo">
+          <option value="">Todos os objetivos</option>
+          <option v-for="o in objetivos" :key="o" :value="o">{{ o }}</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <a class="btn btn-primary" href="ficha-form.html">Nova ficha</a>
+      </form>
+    </header>
+
+    <div class="aviso" v-if="aviso">
+      <span>{{ aviso }}</span>
+      <button type="button" @click="aviso = ''">Fechar</button>
+    </div>
+
+    <div class="painel">
+      <table class="table" v-if="fichas.length">
+        <thead>
+          <tr><th>Aluno</th><th>Objetivo</th><th>Instrutor</th><th>Exercícios</th><th>Criada em</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="f in fichas" :key="f.id">
+            <td style="font-weight:600">{{ f.aluno }}</td>
+            <td><span class="tag tag-outline">{{ f.objetivo }}</span></td>
+            <td>{{ f.instrutor || '— não vinculado' }}</td>
+            <td>{{ f.qtdExercicios }} exercícios</td>
+            <td>{{ dataBR(f.dataCriacao) }}</td>
+            <td>
+              <div class="acoes-linha">
+                <a class="btn btn-ghost" :href="'ficha-form.html?id=' + f.id">Editar</a>
+                <form method="post" action="fichas/excluir"
+                      @submit="confirmarExclusao($event, 'a ficha de ' + f.aluno)">
+                  <input type="hidden" name="id" :value="f.id">
+                  <button type="submit" class="btn btn-ghost">Excluir</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="vazio" v-else>Nenhuma ficha nesse filtro.</p>
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/comum.js"></script>
+<script>
+const A = window.Academia;
+
+Vue.createApp({
+  mixins: [A.comum],
+  data() {
+    return {
+      fichas: A.dados('dados-fichas'),
+      aviso: A.dados('dados-aviso', ''),
+      objetivos: ['Hipertrofia', 'Emagrecimento', 'Condicionamento'],
+      filtroObjetivo: new URLSearchParams(location.search).get('objetivo') || ''
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

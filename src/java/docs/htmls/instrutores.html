@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instrutores — Sistema Academia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/modernist.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
+</head>
+<body>
+
+<script>window.CONTEXTO = '';</script>
+
+<!-- JSP: <script type="application/json" id="dados-instrutores">${instrutoresJson}</script> -->
+<script type="application/json" id="dados-instrutores">
+[
+ {"id":1,"nome":"Marcos Aurélio Dias","cref":"018342-G/SP","especialidade":"Musculação","telefone":"(11) 98110-2244","email":"marcos@vertice.com","status":"Ativo","fichasVinculadas":2},
+ {"id":2,"nome":"Juliana Reis","cref":"027711-G/SP","especialidade":"Funcional","telefone":"(11) 97220-8831","email":"juliana@vertice.com","status":"Ativo","fichasVinculadas":1},
+ {"id":3,"nome":"Rafael Tonini","cref":"033905-G/SP","especialidade":"Condicionamento","telefone":"(11) 96044-1177","email":"rafael@vertice.com","status":"Inativo","fichasVinculadas":0}
+]
+</script>
+<script type="application/json" id="dados-aviso">""</script>
+
+<div id="app" class="layout" v-cloak>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><strong>Academia Vértice</strong><div class="kicker">Gestão</div></div>
+    <nav class="sidebar-nav">
+      <a href="alunos.html">Alunos</a>
+      <a href="planos.html">Planos</a>
+      <a href="matriculas.html">Matrículas</a>
+      <a class="ativo" href="instrutores.html">Instrutores</a>
+      <a href="fichas.html">Fichas de treino</a>
+    </nav>
+    <div class="sidebar-foot">Servlet + JSP<br>Vue 3 só na camada de tela.</div>
+  </aside>
+
+  <main class="conteudo">
+    <header class="pagina-head">
+      <div>
+        <div class="kicker">Cadastro</div>
+        <h1>Instrutores</h1>
+      </div>
+      <form class="acoes-head" method="get" action="instrutores.html">
+        <select class="input" style="width:200px" name="especialidade" v-model="filtroEspecialidade">
+          <option value="">Todas as especialidades</option>
+          <option v-for="e in especialidades" :key="e" :value="e">{{ e }}</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <a class="btn btn-primary" href="instrutor-form.html">Novo instrutor</a>
+      </form>
+    </header>
+
+    <div class="aviso" v-if="aviso">
+      <span>{{ aviso }}</span>
+      <button type="button" @click="aviso = ''">Fechar</button>
+    </div>
+
+    <div class="painel">
+      <table class="table" v-if="instrutores.length">
+        <thead>
+          <tr><th>Nome</th><th>CREF</th><th>Especialidade</th><th>Telefone</th><th>Fichas</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="i in instrutores" :key="i.id">
+            <td style="font-weight:600">{{ i.nome }}</td>
+            <td>{{ i.cref }}</td>
+            <td>{{ i.especialidade }}</td>
+            <td>{{ i.telefone }}</td>
+            <td>{{ i.fichasVinculadas }} fichas</td>
+            <td><span class="tag" :class="i.status === 'Ativo' ? 'tag-neutral' : 'tag-outline'">{{ i.status }}</span></td>
+            <td>
+              <div class="acoes-linha">
+                <a class="btn btn-ghost" :href="'instrutor-form.html?id=' + i.id">Editar</a>
+                <form method="post" action="instrutores/excluir" @submit="validarExclusao($event, i)">
+                  <input type="hidden" name="id" :value="i.id">
+                  <button type="submit" class="btn btn-ghost">Excluir</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="vazio" v-else>Nenhum instrutor nesse filtro.</p>
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/comum.js"></script>
+<script>
+const A = window.Academia;
+
+Vue.createApp({
+  mixins: [A.comum],
+  data() {
+    return {
+      instrutores: A.dados('dados-instrutores'),
+      aviso: A.dados('dados-aviso', ''),
+      especialidades: ['Musculação', 'Funcional', 'Condicionamento', 'Pilates'],
+      filtroEspecialidade: new URLSearchParams(location.search).get('especialidade') || ''
+    };
+  },
+  methods: {
+    validarExclusao(evento, instrutor) {
+      if (instrutor.fichasVinculadas > 0) {
+        if (!confirm('O instrutor ' + instrutor.nome + ' tem ' + instrutor.fichasVinculadas +
+                     ' ficha(s) vinculada(s); elas ficarão sem responsável. Continuar?')) {
+          evento.preventDefault();
+        }
+        return;
+      }
+      this.confirmarExclusao(evento, 'o instrutor ' + instrutor.nome);
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

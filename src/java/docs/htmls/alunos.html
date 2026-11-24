@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alunos — Sistema Academia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/modernist.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
+</head>
+<body>
+
+<!-- JSP: <script>window.CONTEXTO = '${pageContext.request.contextPath}';</script> -->
+<script>window.CONTEXTO = '';</script>
+
+<!-- Dados renderizados pelo servlet. Em JSP:
+     <script type="application/json" id="dados-alunos">${alunosJson}</script>
+     <script type="application/json" id="dados-planos">${planosJson}</script>
+     <script type="application/json" id="dados-matriculas">${matriculasJson}</script>
+     <script type="application/json" id="dados-indicadores">${indicadoresJson}</script> -->
+<script type="application/json" id="dados-alunos">
+[
+ {"id":1,"nome":"Ana Beatriz Ramos","cpf":"412.889.100-33","telefone":"(11) 98812-4410","email":"ana.ramos@email.com","status":"Ativo","planoAtual":"Semestral"},
+ {"id":2,"nome":"Carlos Eduardo Lima","cpf":"277.540.918-02","telefone":"(11) 99671-2088","email":"carlos.lima@email.com","status":"Ativo","planoAtual":"Mensal"},
+ {"id":3,"nome":"Daniela Prado","cpf":"905.331.277-41","telefone":"(11) 97440-3319","email":"dani.prado@email.com","status":"Ativo","planoAtual":"Anual"},
+ {"id":4,"nome":"Eduardo Nakamura","cpf":"188.402.663-70","telefone":"(11) 96522-7781","email":"edu.naka@email.com","status":"Inativo","planoAtual":null},
+ {"id":5,"nome":"Fernanda Quirino","cpf":"650.118.294-15","telefone":"(11) 98330-5512","email":"fe.quirino@email.com","status":"Ativo","planoAtual":"Trimestral"}
+]
+</script>
+<script type="application/json" id="dados-indicadores">
+{"alunosAtivos":4,"matriculas":4,"mensalidadesVencidas":1,"receitaMensal":403.83}
+</script>
+<!-- Mensagem pós-redirect (PRG). JSP: <script type="application/json" id="dados-aviso">"${aviso}"</script> -->
+<script type="application/json" id="dados-aviso">""</script>
+
+<div id="app" class="layout" v-cloak>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><strong>Academia Vértice</strong><div class="kicker">Gestão</div></div>
+    <nav class="sidebar-nav">
+      <a class="ativo" href="alunos.html">Alunos</a>
+      <a href="planos.html">Planos</a>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="instrutores.html">Instrutores</a>
+      <a href="fichas.html">Fichas de treino</a>
+    </nav>
+    <div class="sidebar-foot">Servlet + JSP<br>Vue 3 só na camada de tela.</div>
+  </aside>
+
+  <main class="conteudo">
+    <header class="pagina-head">
+      <div>
+        <div class="kicker">Cadastro</div>
+        <h1>Alunos</h1>
+      </div>
+      <!-- Busca no servidor: GET síncrono para o servlet de listagem -->
+      <form class="acoes-head" method="get" action="alunos.html">
+        <input class="input" style="width:240px" name="busca" v-model="busca" placeholder="Buscar por nome ou CPF">
+        <button type="submit" class="btn btn-secondary">Buscar</button>
+        <a class="btn btn-primary" href="aluno-form.html">Novo aluno</a>
+      </form>
+    </header>
+
+    <div class="aviso" v-if="aviso">
+      <span>{{ aviso }}</span>
+      <button type="button" @click="aviso = ''">Fechar</button>
+    </div>
+
+    <div class="faixa-indicadores">
+      <div class="indicador">
+        <div class="valor">{{ indicadores.alunosAtivos }}</div>
+        <div class="rotulo">Alunos ativos</div>
+      </div>
+      <div class="indicador">
+        <div class="valor">{{ indicadores.matriculas }}</div>
+        <div class="rotulo">Matrículas</div>
+      </div>
+      <div class="indicador">
+        <div class="valor" :class="{ alerta: indicadores.mensalidadesVencidas > 0 }">{{ indicadores.mensalidadesVencidas }}</div>
+        <div class="rotulo">Mensalidades vencidas</div>
+      </div>
+      <div class="indicador">
+        <div class="valor">{{ moeda(indicadores.receitaMensal) }}</div>
+        <div class="rotulo">Receita mensal</div>
+      </div>
+    </div>
+
+    <div class="painel">
+      <table class="table" v-if="filtrados.length">
+        <thead>
+          <tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Plano atual</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="a in filtrados" :key="a.id">
+            <td style="font-weight:600">{{ a.nome }}</td>
+            <td>{{ a.cpf }}</td>
+            <td>{{ a.telefone }}</td>
+            <td>{{ a.planoAtual || '— sem matrícula' }}</td>
+            <td><span class="tag" :class="a.status === 'Ativo' ? 'tag-neutral' : 'tag-outline'">{{ a.status }}</span></td>
+            <td>
+              <div class="acoes-linha">
+                <a class="btn btn-ghost" :href="'aluno-form.html?id=' + a.id">Editar</a>
+                <!-- Exclusão: POST síncrono; o servlet redireciona de volta para a lista -->
+                <form method="post" action="alunos/excluir" @submit="confirmarExclusao($event, 'o aluno ' + a.nome)">
+                  <input type="hidden" name="id" :value="a.id">
+                  <button type="submit" class="btn btn-ghost">Excluir</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="vazio" v-else>Nenhum aluno encontrado para essa busca.</p>
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/comum.js"></script>
+<script>
+const A = window.Academia;
+
+Vue.createApp({
+  mixins: [A.comum],
+  data() {
+    return {
+      alunos: A.dados('dados-alunos'),
+      indicadores: A.dados('dados-indicadores', {}),
+      aviso: A.dados('dados-aviso', ''),
+      // mantém o termo já aplicado pelo servidor na caixa de busca
+      busca: new URLSearchParams(location.search).get('busca') || ''
+    };
+  },
+  computed: {
+    // Filtro instantâneo sobre as linhas já renderizadas; o Buscar continua
+    // indo ao servidor para percorrer a base inteira.
+    filtrados() {
+      const q = this.busca.trim().toLowerCase();
+      if (!q) return this.alunos;
+      return this.alunos.filter(a =>
+        (a.nome || '').toLowerCase().includes(q) || (a.cpf || '').includes(q));
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

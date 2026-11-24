@@ -1,0 +1,17 @@
+# Saída de build do NetBeans/Ant
+build/
+dist/
+
+# Configuração local do NetBeans (caminhos da máquina)
+nbproject/private/
+
+# IDE / SO
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs
+*.log

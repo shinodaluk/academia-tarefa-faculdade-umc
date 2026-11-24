@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://jcp.org"
+         xmlns:xsi="http://w3.org"
+         xsi:schemaLocation="http://jcp.org http://jcp.org/web-app_3_1.xsd"
+         version="3.1">
+
+    <!-- Captura erro 404 (Página não encontrada) -->
+    <error-page>
+        <error-code>404</error-code>
+        <location>/nao-encontrado.jsp</location>
+    </error-page>
+
+    <!-- Captura erro 500 (Erro interno do Servidor) -->
+    <error-page>
+        <error-code>500</error-code>
+        <location>/erro.jsp</location>
+    </error-page>
+
+    <!-- Captura QUALQUER exceção Java não tratada -->
+    <error-page>
+        <exception-type>java.lang.Throwable</exception-type>
+        <location>/erro.jsp</location>
+    </error-page>
+
+</web-app>

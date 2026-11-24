@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matrículas — Sistema Academia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/modernist.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
+</head>
+<body>
+
+<script>window.CONTEXTO = '';</script>
+
+<!-- JSP: <script type="application/json" id="dados-matriculas">${matriculasJson}</script>
+     Sugestão: alimente com a view vw_matricula_valor (valorFinal já calculado). -->
+<script type="application/json" id="dados-matriculas">
+[
+ {"id":1,"aluno":"Ana Beatriz Ramos","plano":"Semestral","dataInicio":"2026-03-10","diaVencimento":10,"valorFinal":79.92,"situacao":"Ativa","diasAtraso":0},
+ {"id":2,"aluno":"Carlos Eduardo Lima","plano":"Mensal","dataInicio":"2026-08-05","diaVencimento":5,"valorFinal":129.90,"situacao":"Ativa","diasAtraso":16},
+ {"id":3,"aluno":"Daniela Prado","plano":"Anual","dataInicio":"2026-01-20","diaVencimento":20,"valorFinal":67.43,"situacao":"Ativa","diasAtraso":0},
+ {"id":4,"aluno":"Fernanda Quirino","plano":"Trimestral","dataInicio":"2026-07-28","diaVencimento":28,"valorFinal":109.90,"situacao":"Ativa","diasAtraso":0}
+]
+</script>
+<script type="application/json" id="dados-aviso">""</script>
+
+<div id="app" class="layout" v-cloak>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><strong>Academia Vértice</strong><div class="kicker">Gestão</div></div>
+    <nav class="sidebar-nav">
+      <a href="alunos.html">Alunos</a>
+      <a href="planos.html">Planos</a>
+      <a class="ativo" href="matriculas.html">Matrículas</a>
+      <a href="instrutores.html">Instrutores</a>
+      <a href="fichas.html">Fichas de treino</a>
+    </nav>
+    <div class="sidebar-foot">Servlet + JSP<br>Vue 3 só na camada de tela.</div>
+  </aside>
+
+  <main class="conteudo">
+    <header class="pagina-head">
+      <div>
+        <div class="kicker">Cadastro</div>
+        <h1>Matrículas</h1>
+      </div>
+      <!-- Filtro no servidor: submete ao trocar a seleção -->
+      <form class="acoes-head" method="get" action="matriculas.html">
+        <select class="input" style="width:200px" name="situacao" v-model="filtroSituacao">
+          <option value="">Todas as situações</option>
+          <option value="Ativa">Ativas</option>
+          <option value="Suspensa">Suspensas</option>
+          <option value="Cancelada">Canceladas</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <a class="btn btn-primary" href="matricula-form.html">Nova matrícula</a>
+      </form>
+    </header>
+
+    <div class="aviso" v-if="aviso">
+      <span>{{ aviso }}</span>
+      <button type="button" @click="aviso = ''">Fechar</button>
+    </div>
+
+    <div class="painel">
+      <table class="table" v-if="linhas.length">
+        <thead>
+          <tr><th>Aluno</th><th>Plano</th><th>Início</th><th>Próx. vencimento</th><th>Mensalidade</th><th>Situação</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="l in linhas" :key="l.id">
+            <td style="font-weight:600">{{ l.aluno }}</td>
+            <td>{{ l.plano }}</td>
+            <td>{{ dataBR(l.dataInicio) }}</td>
+            <td>{{ l.vencimento }}</td>
+            <td style="font-weight:700">{{ moeda(l.valorFinal) }}</td>
+            <td><span class="tag" :class="l.tagClass">{{ l.rotuloPagamento }}</span></td>
+            <td>
+              <div class="acoes-linha">
+                <a class="btn btn-ghost" :href="'matricula-form.html?id=' + l.id">Editar</a>
+                <form method="post" action="matriculas/excluir"
+                      @submit="confirmarExclusao($event, 'a matrícula de ' + l.aluno)">
+                  <input type="hidden" name="id" :value="l.id">
+                  <button type="submit" class="btn btn-ghost">Excluir</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="vazio" v-else>Nenhuma matrícula nesse filtro.</p>
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/comum.js"></script>
+<script>
+const A = window.Academia;
+
+Vue.createApp({
+  mixins: [A.comum],
+  data() {
+    return {
+      matriculas: A.dados('dados-matriculas'),
+      aviso: A.dados('dados-aviso', ''),
+      filtroSituacao: new URLSearchParams(location.search).get('situacao') || ''
+    };
+  },
+  computed: {
+    linhas() {
+      return this.matriculas.map(m => {
+        const venc = A.proximoVencimento(m.diaVencimento);
+        const dias = Math.round((venc - new Date().setHours(0, 0, 0, 0)) / 86400000);
+        let rotuloPagamento = 'Em dia', tagClass = 'tag-neutral';
+        if (m.diasAtraso > 0) { rotuloPagamento = m.diasAtraso + ' dias em atraso'; tagClass = 'tag-accent'; }
+        else if (dias <= 5) { rotuloPagamento = dias === 0 ? 'Vence hoje' : 'Vence em ' + dias + ' dias'; tagClass = 'tag-outline'; }
+        return Object.assign({}, m, { vencimento: venc.toLocaleDateString('pt-BR'), rotuloPagamento, tagClass });
+      });
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
