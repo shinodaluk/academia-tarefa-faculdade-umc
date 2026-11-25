@@ -11,11 +11,11 @@ if (Test-Path $saida) { Remove-Item -Recurse -Force $saida }
 New-Item -ItemType Directory -Force "$saida/main", "$saida/test" | Out-Null
 
 $fontes = Get-ChildItem src/java -Recurse -Filter *.java | ForEach-Object FullName
-javac -encoding UTF-8 -proc:none -cp $cp -d "$saida/main" $fontes
+javac --release 21 -encoding UTF-8 -proc:none -cp $cp -d "$saida/main" $fontes
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $testes = Get-ChildItem test -Recurse -Filter *.java | ForEach-Object FullName
-javac -encoding UTF-8 -proc:none -cp "$saida/main;$junit;$cp" -d "$saida/test" $testes
+javac --release 21 -encoding UTF-8 -proc:none -cp "$saida/main;$junit;$cp" -d "$saida/test" $testes
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 java -jar $junit execute --class-path "$saida/main;$saida/test;$cp" --scan-class-path "$saida/test" --details=tree

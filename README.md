@@ -18,7 +18,7 @@ Projeto acadêmico desenvolvido em Java (Servlet + JSP), sem framework de aplica
 
 | Camada | Tecnologia |
 | --- | --- |
-| Linguagem | Java 24 |
+| Linguagem | Java 21 (LTS) |
 | Web | Servlet / JSP (`javax.servlet`) |
 | Servidor | Apache Tomcat 9 |
 | Banco de dados | MySQL 8 (via Docker) |
@@ -126,7 +126,7 @@ Limitação conhecida: as entidades mantêm getters, porque o Gson e as JSPs dep
 
 ### Pré-requisitos
 
-- JDK 24
+- JDK 21 ou superior
 - Apache Tomcat 9
 - Docker e Docker Compose
 - NetBeans (recomendado)
