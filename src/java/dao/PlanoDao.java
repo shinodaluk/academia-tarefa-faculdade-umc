@@ -88,7 +88,7 @@ public class PlanoDao {
         }
         con.close();
 
-        throw new Exception("Plano não encontrado");
+        throw new RegistroNaoEncontradoException("Plano não encontrado");
     }
 
     public List<Plano> consultarTodos(boolean apenasAtivos) throws ClassNotFoundException, SQLException {

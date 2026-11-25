@@ -110,7 +110,7 @@ public class FichaTreinoDao {
         }
         con.close();
 
-        throw new Exception("Ficha de treino não encontrada");
+        throw new RegistroNaoEncontradoException("Ficha de treino não encontrada");
     }
 
     public List<FichaTreino> consultarTodos(String objetivo) throws ClassNotFoundException, SQLException {

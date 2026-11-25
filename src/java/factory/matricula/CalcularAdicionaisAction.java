@@ -11,24 +11,18 @@ import factory.ICommand;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import model.Bioimpedancia;
-import model.CadeiraMassagem;
 import model.Matricula;
-import model.PreTreino;
+import model.MontadorAdicionais;
 import model.Servico;
 import model.ServicoAdicional;
 
 public class CalcularAdicionaisAction implements ICommand {
-    private static final Set<String> CODIGOS_RECONHECIDOS = new LinkedHashSet<>(Arrays.asList(
-            "BIOIMPEDANCIA", "CADEIRA_MASSAGEM", "PRE_TREINO"));
-
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
         response.setCharacterEncoding("UTF-8");
@@ -96,19 +90,7 @@ public class CalcularAdicionaisAction implements ICommand {
         try {
             for (String codigo : codigos) {
                 ServicoAdicional adicional = adicionaisDao.consultarPorCodigo(codigo);
-                switch (codigo) {
-                    case "BIOIMPEDANCIA":
-                        composto = new Bioimpedancia(composto, adicional);
-                        break;
-                    case "CADEIRA_MASSAGEM":
-                        composto = new CadeiraMassagem(composto, adicional);
-                        break;
-                    case "PRE_TREINO":
-                        composto = new PreTreino(composto, adicional);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Código de adicional não reconhecido.");
-                }
+                composto = MontadorAdicionais.decorar(composto, adicional);
 
                 adicionaisSelecionados.add(Map.of(
                         "codigo", adicional.getCodigo(),
@@ -155,7 +137,7 @@ public class CalcularAdicionaisAction implements ICommand {
             }
 
             String codigo = elemento.getAsString();
-            if (!CODIGOS_RECONHECIDOS.contains(codigo)) {
+            if (!MontadorAdicionais.reconhece(codigo)) {
                 responderErro(response, gson, HttpServletResponse.SC_BAD_REQUEST,
                         "Código de serviço adicional não reconhecido: " + codigo);
                 return null;

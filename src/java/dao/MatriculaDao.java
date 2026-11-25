@@ -129,7 +129,7 @@ public class MatriculaDao {
         }
         con.close();
 
-        throw new Exception("Matrícula não encontrada");
+        throw new RegistroNaoEncontradoException("Matrícula não encontrada");
     }
 
     public List<Matricula> consultarTodos(String situacao) throws ClassNotFoundException, SQLException {

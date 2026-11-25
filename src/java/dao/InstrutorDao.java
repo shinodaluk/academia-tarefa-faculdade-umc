@@ -91,7 +91,7 @@ public class InstrutorDao {
         }
         con.close();
 
-        throw new Exception("Instrutor não encontrado");
+        throw new RegistroNaoEncontradoException("Instrutor não encontrado");
     }
 
     public List<Instrutor> consultarTodos(String especialidade, String status) throws ClassNotFoundException, SQLException {

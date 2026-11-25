@@ -32,7 +32,9 @@ Projeto acadêmico desenvolvido em Java (Servlet + JSP), sem framework de aplica
 
 ```
 src/java/
-├── controller/   Servlets por recurso (AlunoController, PlanoController, ...)
+├── api/          API REST (/api/*): servlet, roteador, controlador genérico, validações
+│   └── repositorio/  Adaptadores dos DAOs para a interface Repositorio
+├── controller/   Servlets das telas (AlunoController, PlanoController, ...)
 ├── factory/      Ações por recurso (Command): CriarAction, EditarAction, SalvarAction, ...
 ├── dao/          Acesso ao banco com JDBC e PreparedStatement
 ├── model/        Entidades (com Builder) e decorators de serviços adicionais
@@ -43,7 +45,7 @@ src/java/
     ├── htmls/             Protótipos das telas
     └── jar/               Bibliotecas usadas pelo projeto
 test/             Testes unitários (JUnit 5)
-lib/              JUnit Console Standalone
+lib/              JUnit Console Standalone e Servlet API (só para compilar os testes)
 web/              Páginas JSP, CSS e JS
 ```
 
@@ -78,6 +80,13 @@ o banco e rejeita um adicional de código diferente do seu.
 - **Builder** — criação das entidades (`Plano.getBuilder().comNome(...).constroi()`).
 - **Command** — cada ação implementa `factory.ICommand` e é escolhida pelo parâmetro `acao`.
 - **DAO** — uma classe de acesso a dados por entidade, isolando o SQL.
+- **Adapter** — `api.repositorio.*RepositorioJdbc` adaptam cada DAO à interface `api.Repositorio<T>`.
+- **Front Controller** — `api.ApiServlet` recebe todo `/api/*` e o `api.RoteadorApi` escolhe o recurso.
+- **Strategy** — cada recurso recebe seu `api.Validador<T>`; o `ControladorRest<T>` é o mesmo para todos.
+
+A API depende só das interfaces `Repositorio<T>` e `Validador<T>` (inversão de dependência). As
+implementações são montadas em um único ponto, `ApiServlet.init()`, e nos testes são trocadas por fakes
+em memória.
 
 ## Como executar
 
@@ -126,37 +135,103 @@ Testes unitários em `test/`, com JUnit 5. Não dependem de banco nem de servido
 | --- | --- |
 | `model.AdicionaisMatriculaTest` | Cada decorator soma seu valor e sua descrição, encadeamento de vários decorators, ordem da descrição, soma sem erro de ponto flutuante, base intacta e validação dos argumentos |
 | `model.MatriculaTest` | `Matricula` como componente concreto do decorator e erro quando o plano não foi carregado |
+| `model.MontadorAdicionaisTest` | Escolha do decorator pelo código do adicional |
+| `api.ControladorRestTest` | Verbos, status (200, 201, 204, 400, 404, 405, 409, 500), `Location`, `Allow`, id da URL x corpo, sub-recursos |
+| `api.RequisicaoApiTest` | Interpretação do caminho `/recurso/{id}/sub` |
+| `api.ValidacoesTest` | Regras de entrada de cada recurso (espelham as restrições do banco) |
+| `api.AdicionaisMatriculaRecursoTest` | Cálculo dos adicionais via API usando o Decorator |
+| `api.NormalizacaoFichaTest` | Valores padrão da ficha (data de hoje, ordem dos exercícios) |
 
 Para rodar pelo terminal (PowerShell, precisa só do JDK):
 
 ```powershell
-.	estes.ps1
+.\testes.ps1
 ```
 
-O script compila o pacote `model` e os testes em `build/testes` e roda a suíte com o JUnit Console.
+O script compila o projeto e os testes em `build/testes` e roda a suíte com o JUnit Console.
 No NetBeans, os testes ficam em **Test Packages** e o JUnit já está no classpath de testes do projeto.
 
-## Rotas
+## API REST
 
-Cada recurso tem um servlet; a ação é definida pelo parâmetro `acao`.
+Base: `http://localhost:8080/WebApplication1/api`. Corpo e respostas em JSON (UTF-8). As telas JSP
+continuam funcionando em paralelo (seção [Telas](#telas)).
 
-| Recurso | URL | Ações |
-| --- | --- | --- |
-| Alunos | `/aluno` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
-| Planos | `/plano` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
-| Instrutores | `/instrutor` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
-| Matrículas | `/matricula` | `listar`, `criar`, `editar`, `salvar`, `excluir`, `adicionais`, `calcularAdicionais` |
-| Fichas | `/ficha` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
+### Recursos
 
-### Cálculo de adicionais (JSON)
+| Recurso | Coleção | Item | Filtros (query string) |
+| --- | --- | --- | --- |
+| Alunos | `/api/alunos` | `/api/alunos/{id}` | `busca`, `status` |
+| Planos | `/api/planos` | `/api/planos/{id}` | `apenasAtivos=true` |
+| Instrutores | `/api/instrutores` | `/api/instrutores/{id}` | `especialidade`, `status` |
+| Matrículas | `/api/matriculas` | `/api/matriculas/{id}` | `situacao` |
+| Fichas de treino | `/api/fichas` | `/api/fichas/{id}` | `objetivo` |
 
-`POST /matricula?acao=calcularAdicionais`
+| Método | Caminho | Ação | Sucesso |
+| --- | --- | --- | --- |
+| `GET` | `/api/{recurso}` | Lista | `200 OK` |
+| `POST` | `/api/{recurso}` | Cria | `201 Created` + cabeçalho `Location` + item criado |
+| `GET` | `/api/{recurso}/{id}` | Busca um | `200 OK` |
+| `PUT` | `/api/{recurso}/{id}` | Substitui | `200 OK` + item atualizado |
+| `DELETE` | `/api/{recurso}/{id}` | Exclui | `204 No Content` |
 
-```json
-{ "id": 1, "adicionais": ["BIOIMPEDANCIA", "PRE_TREINO"] }
+O `id` vem sempre da URL; um `id` enviado no corpo é ignorado.
+
+### Erros
+
+Todo erro responde `{ "error": "mensagem" }`. Erros de validação trazem também `detalhes`.
+
+| Status | Quando |
+| --- | --- |
+| `400 Bad Request` | JSON malformado, tipo de campo errado, corpo fora de UTF-8, id não numérico ou validação |
+| `404 Not Found` | Recurso ou id inexistente |
+| `405 Method Not Allowed` | Verbo não suportado no caminho (cabeçalho `Allow` lista os aceitos) |
+| `409 Conflict` | Violação de integridade: CPF/CREF/nome duplicado, aluno/plano inexistente, plano com matrículas |
+| `500 Internal Server Error` | Falha inesperada (detalhes só no log do servidor) |
+
+### Exemplos
+
+Criar um plano:
+
+```http
+POST /api/planos
+Content-Type: application/json
+
+{ "nome": "Trimestral Plus", "duracaoMeses": 3, "valorMensal": 119.90, "descricao": "Musculação + aulas", "ativo": true }
 ```
 
-Resposta `200 OK` (matrícula no plano Mensal, sem desconto):
+```http
+HTTP/1.1 201 Created
+Location: /WebApplication1/api/planos/5
+
+{ "id": 5, "nome": "Trimestral Plus", "duracaoMeses": 3, "valorMensal": 119.9, "descricao": "Musculação + aulas", "ativo": true, "matriculasVinculadas": 0 }
+```
+
+Validação:
+
+```http
+HTTP/1.1 400 Bad Request
+
+{ "error": "Dados inválidos.", "detalhes": ["nome é obrigatório", "duracaoMeses deve estar entre 1 e 36", "valorMensal é obrigatório"] }
+```
+
+### Campos
+
+| Recurso | Campos de entrada |
+| --- | --- |
+| Aluno | `nome`*, `cpf`*, `dataNascimento`* (`yyyy-MM-dd`), `telefone`, `email`, `status`* (`Ativo`/`Inativo`) |
+| Plano | `nome`*, `duracaoMeses`* (1–36), `valorMensal`* (≥ 0), `descricao`, `ativo` |
+| Instrutor | `nome`*, `cref`*, `especialidade`* (`Musculação`/`Funcional`/`Condicionamento`/`Pilates`), `telefone`, `email`, `status`* |
+| Matrícula | `alunoId`*, `planoId`*, `dataInicio`*, `fidelidadeMeses`* (0/6/12), `descontoEstudante`, `diaVencimento`* (1–28), `situacao`* (`Ativa`/`Cancelada`/`Suspensa`) |
+| Ficha | `alunoId`*, `instrutorId`, `objetivo`* (`Hipertrofia`/`Emagrecimento`/`Condicionamento`), `dataCriacao` (padrão: hoje), `observacoes`, `exercicios` (`nome`*, `series`*, `repeticoes`*, `cargaKg`) |
+
+\* obrigatório. Na ficha, a `ordem` dos exercícios segue a posição na lista.
+
+### Adicionais da matrícula (Decorator)
+
+`GET /api/matriculas/{id}/adicionais?codigos=BIOIMPEDANCIA,PRE_TREINO`
+
+Calcula o valor mensal da matrícula com os adicionais aplicados como decorators. Códigos aceitos:
+`BIOIMPEDANCIA`, `CADEIRA_MASSAGEM`, `PRE_TREINO`. Sem `codigos`, retorna só o valor base.
 
 ```json
 {
@@ -172,5 +247,19 @@ Resposta `200 OK` (matrícula no plano Mensal, sem desconto):
 }
 ```
 
-Erros retornam `{ "error": "mensagem" }` com status `400` (entrada inválida), `404` (matrícula
-não encontrada), `405` (método diferente de POST) ou `500`.
+Código desconhecido retorna `400`; matrícula inexistente, `404`.
+
+## Telas
+
+As telas usam um servlet por recurso, com a ação no parâmetro `acao`.
+
+| Recurso | URL | Ações |
+| --- | --- | --- |
+| Alunos | `/aluno` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
+| Planos | `/plano` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
+| Instrutores | `/instrutor` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
+| Matrículas | `/matricula` | `listar`, `criar`, `editar`, `salvar`, `excluir`, `adicionais`, `calcularAdicionais` |
+| Fichas | `/ficha` | `listar`, `criar`, `editar`, `salvar`, `excluir` |
+
+A tela de adicionais usa `POST /matricula?acao=calcularAdicionais` com `{ "id": 1, "adicionais": [...] }`
+e recebe o mesmo JSON do endpoint REST acima.

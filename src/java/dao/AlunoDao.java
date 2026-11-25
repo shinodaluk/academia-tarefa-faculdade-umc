@@ -95,7 +95,7 @@ public class AlunoDao {
         }       
         con.close();
         
-        throw new Exception("Aluno não encontrado");
+        throw new RegistroNaoEncontradoException("Aluno não encontrado");
     }
     
     public List<Aluno> consultarTodos(String busca, String status) throws ClassNotFoundException, SQLException {
