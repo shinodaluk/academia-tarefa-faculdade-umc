@@ -33,17 +33,24 @@ public class ApiServlet extends HttpServlet {
 
         roteador = new RoteadorApi(Map.of(
                 "alunos", new ControladorRest<>(Aluno.class, dependencias.alunos(), Validacoes.aluno(), gson)
+                        .comSubrecurso("matriculas", new RelacionamentoRecurso<>(dependencias.alunos(), Aluno::getMatriculas))
+                        .comSubrecurso("fichas", new RelacionamentoRecurso<>(dependencias.alunos(), Aluno::getFichas))
                         .comSubrecurso("avaliacao", new AvaliacaoFisicaRecurso(dependencias.alunos(),
                                 dependencias.avaliacoes(), Validacoes.avaliacaoFisica(), gson)),
-                "planos", new ControladorRest<>(Plano.class, dependencias.planos(), Validacoes.plano(), gson),
+                "planos", new ControladorRest<>(Plano.class, dependencias.planos(), Validacoes.plano(), gson)
+                        .comSubrecurso("matriculas", new RelacionamentoRecurso<>(dependencias.planos(), Plano::getMatriculas)),
                 "instrutores", new ControladorRest<>(Instrutor.class,
-                        dependencias.instrutores(), Validacoes.instrutor(), gson),
+                        dependencias.instrutores(), Validacoes.instrutor(), gson)
+                        .comSubrecurso("fichas", new RelacionamentoRecurso<>(
+                                dependencias.instrutores(), Instrutor::getFichas)),
                 "matriculas", new ControladorRest<>(Matricula.class,
                         dependencias.matriculas(), Validacoes.matricula(), gson)
                         .comSubrecurso("adicionais", new AdicionaisMatriculaRecurso(
                                 dependencias.matriculas()::buscar, dependencias.adicionais()::porCodigo)),
                 "fichas", new ControladorRest<>(FichaTreino.class, dependencias.fichas(), Validacoes.ficha(), gson)
-                        .comNormalizador(new NormalizacaoFicha())));
+                        .comNormalizador(new NormalizacaoFicha())
+                        .comSubrecurso("exercicios", new RelacionamentoRecurso<>(
+                                dependencias.fichas(), FichaTreino::getExercicios))));
     }
 
     @Override
