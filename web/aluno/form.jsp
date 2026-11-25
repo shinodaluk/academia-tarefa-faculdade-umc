@@ -113,6 +113,87 @@
         <a class="btn btn-secondary" href="${pageContext.request.contextPath}/aluno">Cancelar</a>
       </div>
     </form>
+
+    <!-- 1:1 com o aluno: lida e gravada pela API REST, só depois do aluno existir -->
+    <section class="painel-form" v-if="modelo.id" aria-labelledby="titulo-avaliacao"
+             style="border-top: 2px solid var(--color-divider)">
+      <div class="kicker">Acompanhamento</div>
+      <h2 id="titulo-avaliacao" style="margin:0 0 var(--space-6)">Avaliação física</h2>
+
+      <p class="vazio" v-if="avaliacaoCarregando">Carregando avaliação…</p>
+      <template v-else>
+        <p class="vazio" v-if="!avaliacaoExiste" style="margin-top:0">Este aluno ainda não tem avaliação física.</p>
+        <div class="aviso" v-if="avaliacaoAviso" style="margin-bottom:var(--space-6)">
+          <span>{{ avaliacaoAviso }}</span>
+          <button type="button" @click="avaliacaoAviso = ''">Fechar</button>
+        </div>
+
+        <form novalidate @submit.prevent="salvarAvaliacao">
+          <div class="grade-form grade-form-3">
+            <div class="field">
+              <label for="dataAvaliacao">Data da avaliação</label>
+              <input id="dataAvaliacao" type="date" class="input" :max="hoje"
+                     :class="{ invalido: avaliacaoErros.dataAvaliacao }" v-model="avaliacao.dataAvaliacao">
+              <span class="erro" v-if="avaliacaoErros.dataAvaliacao">{{ avaliacaoErros.dataAvaliacao }}</span>
+            </div>
+            <div class="field">
+              <label for="pesoKg">Peso (kg)</label>
+              <input id="pesoKg" type="number" step="0.01" min="1" max="400" class="input"
+                     :class="{ invalido: avaliacaoErros.pesoKg }" v-model="avaliacao.pesoKg">
+              <span class="erro" v-if="avaliacaoErros.pesoKg">{{ avaliacaoErros.pesoKg }}</span>
+            </div>
+            <div class="field">
+              <label for="alturaM">Altura (m)</label>
+              <input id="alturaM" type="number" step="0.01" min="0.5" max="2.6" class="input"
+                     :class="{ invalido: avaliacaoErros.alturaM }" v-model="avaliacao.alturaM">
+              <span class="erro" v-if="avaliacaoErros.alturaM">{{ avaliacaoErros.alturaM }}</span>
+            </div>
+            <div class="field">
+              <label for="percentualGordura">Gordura (%)</label>
+              <input id="percentualGordura" type="number" step="0.1" min="0" max="70" class="input"
+                     v-model="avaliacao.percentualGordura">
+            </div>
+            <div class="field">
+              <label for="massaMagraKg">Massa magra (kg)</label>
+              <input id="massaMagraKg" type="number" step="0.01" min="1" class="input" v-model="avaliacao.massaMagraKg">
+            </div>
+            <div class="field">
+              <label for="cinturaCm">Cintura (cm)</label>
+              <input id="cinturaCm" type="number" step="0.1" min="30" class="input" v-model="avaliacao.cinturaCm">
+            </div>
+            <div class="field">
+              <label for="pressaoArterial">Pressão arterial</label>
+              <input id="pressaoArterial" class="input" placeholder="120/80" maxlength="7"
+                     :class="{ invalido: avaliacaoErros.pressaoArterial }" v-model.trim="avaliacao.pressaoArterial">
+              <span class="erro" v-if="avaliacaoErros.pressaoArterial">{{ avaliacaoErros.pressaoArterial }}</span>
+            </div>
+            <div class="field">
+              <label for="frequenciaCardiaca">FC em repouso (bpm)</label>
+              <input id="frequenciaCardiaca" type="number" step="1" min="20" max="250" class="input"
+                     v-model="avaliacao.frequenciaCardiaca">
+            </div>
+            <div class="field">
+              <label>IMC</label>
+              <div class="indicador" style="padding:0; border:0">
+                <div class="valor">{{ imc || '—' }}</div>
+              </div>
+            </div>
+            <div class="field col-2">
+              <label for="observacoes">Observações</label>
+              <input id="observacoes" class="input" maxlength="255" v-model.trim="avaliacao.observacoes">
+            </div>
+          </div>
+
+          <div class="acoes-form" style="margin-top:var(--space-8)">
+            <button type="submit" class="btn btn-primary" :disabled="salvandoAvaliacao">
+              {{ salvandoAvaliacao ? 'Salvando…' : 'Salvar avaliação' }}
+            </button>
+            <button type="button" class="btn btn-secondary" v-if="avaliacaoExiste"
+                    :disabled="salvandoAvaliacao" @click="excluirAvaliacao">Excluir avaliação</button>
+          </div>
+        </form>
+      </template>
+    </section>
   </main>
 </div>
 
@@ -127,10 +208,98 @@ Vue.createApp({
       hoje: A.hojeISO(),
       aviso: "${aviso}",
       modelo: A.dados('dados-aluno', {}),
-      erros: A.dados('dados-erros', {})   // erros vindos do servlet
+      erros: A.dados('dados-erros', {}),   // erros vindos do servlet
+      avaliacao: {},
+      avaliacaoExiste: false,
+      avaliacaoCarregando: false,
+      avaliacaoErros: {},
+      avaliacaoAviso: '',
+      salvandoAvaliacao: false
     };
   },
+  computed: {
+    // prévia; o valor oficial é o imc devolvido pela API
+    imc() {
+      const peso = Number(this.avaliacao.pesoKg), altura = Number(this.avaliacao.alturaM);
+      return peso > 0 && altura > 0 ? (peso / (altura * altura)).toFixed(1).replace('.', ',') : '';
+    }
+  },
+  mounted() {
+    if (this.modelo.id) this.carregarAvaliacao();
+  },
   methods: {
+    urlAvaliacao() {
+      return window.CONTEXTO + '/api/alunos/' + this.modelo.id + '/avaliacao';
+    },
+    async carregarAvaliacao() {
+      this.avaliacaoCarregando = true;
+      try {
+        const resposta = await fetch(this.urlAvaliacao());
+        if (resposta.status === 404) {
+          this.avaliacao = { dataAvaliacao: this.hoje };
+          this.avaliacaoExiste = false;
+          return;
+        }
+        const dados = await resposta.json();
+        if (!resposta.ok) throw new Error(dados.error);
+        this.avaliacao = dados;
+        this.avaliacaoExiste = true;
+      } catch (ex) {
+        this.avaliacaoAviso = 'Não foi possível carregar a avaliação física.';
+      } finally {
+        this.avaliacaoCarregando = false;
+      }
+    },
+    async salvarAvaliacao() {
+      this.avaliacaoErros = A.validar(this.avaliacao, {
+        dataAvaliacao: [[A.obrigatorio, 'Informe a data da avaliação.']],
+        pesoKg: [[A.obrigatorio, 'Informe o peso.'], [v => v >= 1 && v <= 400, 'Peso entre 1 e 400 kg.']],
+        alturaM: [[A.obrigatorio, 'Informe a altura.'], [v => v >= 0.5 && v <= 2.6, 'Altura entre 0,5 e 2,6 m.']],
+        pressaoArterial: [[v => !v || /^[0-9]{2,3}\/[0-9]{2,3}$/.test(v), 'Use o formato 120/80.']]
+      });
+      if (Object.keys(this.avaliacaoErros).length) return;
+
+      // campo vazio vai como null, não como texto vazio
+      const corpo = {};
+      ['dataAvaliacao', 'pesoKg', 'alturaM', 'percentualGordura', 'massaMagraKg', 'cinturaCm',
+       'pressaoArterial', 'frequenciaCardiaca', 'observacoes'].forEach(campo => {
+        const valor = this.avaliacao[campo];
+        corpo[campo] = valor === '' || valor === undefined ? null : valor;
+      });
+
+      this.salvandoAvaliacao = true;
+      try {
+        const resposta = await fetch(this.urlAvaliacao(), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify(corpo)
+        });
+        const dados = await resposta.json();
+        if (!resposta.ok) throw new Error((dados.detalhes || [dados.error]).join('; '));
+        this.avaliacao = dados;
+        this.avaliacaoExiste = true;
+        this.avaliacaoAviso = resposta.status === 201 ? 'Avaliação cadastrada.' : 'Avaliação atualizada.';
+      } catch (ex) {
+        this.avaliacaoAviso = ex.message || 'Falha ao salvar a avaliação.';
+      } finally {
+        this.salvandoAvaliacao = false;
+      }
+    },
+    async excluirAvaliacao() {
+      if (!confirm('Excluir a avaliação física? Esta ação não pode ser desfeita.')) return;
+      this.salvandoAvaliacao = true;
+      try {
+        const resposta = await fetch(this.urlAvaliacao(), { method: 'DELETE' });
+        if (!resposta.ok && resposta.status !== 404) throw new Error();
+        this.avaliacao = { dataAvaliacao: this.hoje };
+        this.avaliacaoExiste = false;
+        this.avaliacaoAviso = 'Avaliação excluída.';
+      } catch (ex) {
+        this.avaliacaoAviso = 'Falha ao excluir a avaliação.';
+      } finally {
+        this.salvandoAvaliacao = false;
+      }
+    },
     validarFormulario() {
       this.erros = A.validar(this.modelo, {
         nome: [[A.obrigatorio, 'Informe o nome completo.'],

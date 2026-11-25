@@ -14,7 +14,7 @@ Projeto acadêmico desenvolvido em Java (Servlet + JSP), sem framework de aplica
 - **Instrutores** — cadastro com CREF, especialidade e status.
 - **Matrículas** — vínculo aluno × plano, fidelidade, desconto estudante e dia de vencimento.
 - **Fichas de treino** — ficha por aluno/instrutor com lista de exercícios (séries, repetições, carga).
-- **Avaliação física** — uma por aluno (peso, altura, % de gordura, pressão, frequência cardíaca), com IMC calculado.
+- **Avaliação física** — uma por aluno (peso, altura, % de gordura, pressão, frequência cardíaca), com IMC calculado; editada na tela do aluno, pela API REST.
 - **Adicionais da matrícula** — soma de serviços extras (Bioimpedância, Cadeira de massagem, Pré-treino) ao valor do plano.
 
 ## Tecnologias
