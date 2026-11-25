@@ -4,6 +4,7 @@
  */
 package dao;
 
+import model.Dinheiro;
 import model.Matricula;
 import java.util.List;
 import util.DBConnector;
@@ -78,101 +79,100 @@ public class MatriculaDao {
     }
 
     public void deletar(Matricula matricula) throws ClassNotFoundException, SQLException {
-        Connection con = getConexao();
-        PreparedStatement comando = con.prepareStatement("DELETE FROM matricula WHERE id = ?");
-        comando.setInt(1, matricula.getId());
-        comando.execute();
-        con.close();
+        try (Connection con = getConexao()) {
+            PreparedStatement comando = con.prepareStatement("DELETE FROM matricula WHERE id = ?");
+            comando.setInt(1, matricula.getId());
+            comando.execute();
+        }
     }
 
     public void atualizar(Matricula matricula) throws ClassNotFoundException, SQLException {
-        Connection con = getConexao();
-        PreparedStatement comando = con.prepareStatement("UPDATE matricula SET aluno_id = ?, plano_id = ?, data_inicio = ?, fidelidade_meses = ?, desconto_estudante = ?, dia_vencimento = ?, situacao = ? WHERE id = ?");
-        comando.setInt(1, matricula.getAlunoId());
-        comando.setInt(2, matricula.getPlanoId());
-        comando.setDate(3, new java.sql.Date(matricula.getDataInicio().getTime()));
-        comando.setInt(4, matricula.getFidelidadeMeses());
-        comando.setBoolean(5, matricula.isDescontoEstudante());
-        comando.setInt(6, matricula.getDiaVencimento());
-        comando.setString(7, matricula.getSituacao());
-        comando.setInt(8, matricula.getId());
-        comando.execute();
-        con.close();
+        try (Connection con = getConexao()) {
+            PreparedStatement comando = con.prepareStatement("UPDATE matricula SET aluno_id = ?, plano_id = ?, data_inicio = ?, fidelidade_meses = ?, desconto_estudante = ?, dia_vencimento = ?, situacao = ? WHERE id = ?");
+            comando.setInt(1, matricula.getAlunoId());
+            comando.setInt(2, matricula.getPlanoId());
+            comando.setDate(3, new java.sql.Date(matricula.getDataInicio().getTime()));
+            comando.setInt(4, matricula.getFidelidadeMeses());
+            comando.setBoolean(5, matricula.isDescontoEstudante());
+            comando.setInt(6, matricula.getDiaVencimento());
+            comando.setString(7, matricula.getSituacao());
+            comando.setInt(8, matricula.getId());
+            comando.execute();
+        }
     }
 
     public Matricula consultarById(Matricula matricula) throws Exception {
-        Connection con = getConexao();
-        PreparedStatement comando = con.prepareStatement(
-                "SELECT m.*, p.nome AS plano, p.valor_mensal "
-                + "FROM matricula m JOIN plano p ON p.id = m.plano_id WHERE m.id = ?");
-        comando.setInt(1, matricula.getId());
-        ResultSet rs = comando.executeQuery();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        if (rs.next()) {
-            BigDecimal valorFinal = calcularValorFinal(rs.getBigDecimal("valor_mensal"),
-                    rs.getInt("fidelidade_meses"), rs.getBoolean("desconto_estudante"));
-            Matricula m = Matricula.getBuilder()
-                .comId(rs.getInt("id"))
-                .comAlunoId(rs.getInt("aluno_id"))
-                .comPlanoId(rs.getInt("plano_id"))
-                .comDescricao(rs.getString("plano"))
-                .comCustoBase(valorFinal.doubleValue())
-                .comValorFinal(valorFinal.doubleValue())
-                .comDataInicio(sdf.format(rs.getDate("data_inicio")))
-                .comFidelidadeMeses(rs.getInt("fidelidade_meses"))
-                .comDescontoEstudante(rs.getBoolean("desconto_estudante"))
-                .comDiaVencimento(rs.getInt("dia_vencimento"))
-                .comSituacao(rs.getString("situacao"))
-                .constroi();
-            con.close();
-            return m;
-        }
-        con.close();
+        try (Connection con = getConexao()) {
+            PreparedStatement comando = con.prepareStatement(
+                    "SELECT m.*, p.nome AS plano, p.valor_mensal "
+                    + "FROM matricula m JOIN plano p ON p.id = m.plano_id WHERE m.id = ?");
+            comando.setInt(1, matricula.getId());
+            ResultSet rs = comando.executeQuery();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            if (rs.next()) {
+                BigDecimal valorFinal = calcularValorFinal(rs.getBigDecimal("valor_mensal"),
+                        rs.getInt("fidelidade_meses"), rs.getBoolean("desconto_estudante"));
+                Matricula m = Matricula.getBuilder()
+                    .comId(rs.getInt("id"))
+                    .comAlunoId(rs.getInt("aluno_id"))
+                    .comPlanoId(rs.getInt("plano_id"))
+                    .comDescricao(rs.getString("plano"))
+                    .comCustoBase(Dinheiro.de(valorFinal))
+                    .comValorFinal(Dinheiro.de(valorFinal))
+                    .comDataInicio(sdf.format(rs.getDate("data_inicio")))
+                    .comFidelidadeMeses(rs.getInt("fidelidade_meses"))
+                    .comDescontoEstudante(rs.getBoolean("desconto_estudante"))
+                    .comDiaVencimento(rs.getInt("dia_vencimento"))
+                    .comSituacao(rs.getString("situacao"))
+                    .constroi();
+                return m;
+            }
 
-        throw new RegistroNaoEncontradoException("Matrícula não encontrada");
+            throw new RegistroNaoEncontradoException("Matrícula não encontrada");
+        }
     }
 
     public List<Matricula> consultarTodos(String situacao) throws ClassNotFoundException, SQLException {
-        Connection con = getConexao();
-        String sql = """
-            SELECT m.id, a.nome AS aluno, p.nome AS plano, m.data_inicio, p.valor_mensal,
-                   m.fidelidade_meses, m.desconto_estudante, m.dia_vencimento, m.situacao,
-                   COALESCE((SELECT DATEDIFF(CURDATE(), MIN(me.data_vencimento)) FROM mensalidade me
-                              WHERE me.matricula_id = m.id AND me.data_pagamento IS NULL
-                                AND me.data_vencimento < CURDATE()), 0) AS dias_atraso
-            FROM matricula m
-            JOIN aluno a ON a.id = m.aluno_id
-            JOIN plano p ON p.id = m.plano_id
-            CROSS JOIN (SELECT ? AS situacao) AS prm
-            WHERE (prm.situacao = '' OR m.situacao = prm.situacao)
-            ORDER BY a.nome
-        """;
-        PreparedStatement comando = con.prepareStatement(sql);
-        comando.setString(1, situacao == null ? "" : situacao);
-        ResultSet rs = comando.executeQuery();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        List<Matricula> lMatricula = new ArrayList<>();
+        try (Connection con = getConexao()) {
+            String sql = """
+                SELECT m.id, a.nome AS aluno, p.nome AS plano, m.data_inicio, p.valor_mensal,
+                       m.fidelidade_meses, m.desconto_estudante, m.dia_vencimento, m.situacao,
+                       COALESCE((SELECT DATEDIFF(CURDATE(), MIN(me.data_vencimento)) FROM mensalidade me
+                                  WHERE me.matricula_id = m.id AND me.data_pagamento IS NULL
+                                    AND me.data_vencimento < CURDATE()), 0) AS dias_atraso
+                FROM matricula m
+                JOIN aluno a ON a.id = m.aluno_id
+                JOIN plano p ON p.id = m.plano_id
+                CROSS JOIN (SELECT ? AS situacao) AS prm
+                WHERE (prm.situacao = '' OR m.situacao = prm.situacao)
+                ORDER BY a.nome
+            """;
+            PreparedStatement comando = con.prepareStatement(sql);
+            comando.setString(1, situacao == null ? "" : situacao);
+            ResultSet rs = comando.executeQuery();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            List<Matricula> matriculas = new ArrayList<>();
 
-        while(rs.next()){
-            BigDecimal valorFinal = calcularValorFinal(rs.getBigDecimal("valor_mensal"),
-                    rs.getInt("fidelidade_meses"), rs.getBoolean("desconto_estudante"));
-            Matricula m = Matricula.getBuilder()
-                .comId(rs.getInt("id"))
-                .comAluno(rs.getString("aluno"))
-                .comPlano(rs.getString("plano"))
-                .comDescricao(rs.getString("plano"))
-                .comDataInicio(sdf.format(rs.getDate("data_inicio")))
-                .comValorFinal(valorFinal.doubleValue())
-                .comCustoBase(valorFinal.doubleValue())
-                .comDiaVencimento(rs.getInt("dia_vencimento"))
-                .comSituacao(rs.getString("situacao"))
-                .comDiasAtraso(rs.getInt("dias_atraso"))
-                .constroi();
-            lMatricula.add(m);
+            while(rs.next()){
+                BigDecimal valorFinal = calcularValorFinal(rs.getBigDecimal("valor_mensal"),
+                        rs.getInt("fidelidade_meses"), rs.getBoolean("desconto_estudante"));
+                Matricula m = Matricula.getBuilder()
+                    .comId(rs.getInt("id"))
+                    .comAluno(rs.getString("aluno"))
+                    .comPlano(rs.getString("plano"))
+                    .comDescricao(rs.getString("plano"))
+                    .comDataInicio(sdf.format(rs.getDate("data_inicio")))
+                    .comValorFinal(Dinheiro.de(valorFinal))
+                    .comCustoBase(Dinheiro.de(valorFinal))
+                    .comDiaVencimento(rs.getInt("dia_vencimento"))
+                    .comSituacao(rs.getString("situacao"))
+                    .comDiasAtraso(rs.getInt("dias_atraso"))
+                    .constroi();
+                matriculas.add(m);
+            }
+
+            return matriculas;
         }
-
-        con.close();
-        return lMatricula;
     }
 
     // fidelidade 6m = 5%, 12m = 10%; estudante = 15%; descontos somam sobre o valor base

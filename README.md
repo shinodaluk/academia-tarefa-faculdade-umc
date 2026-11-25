@@ -34,11 +34,11 @@ Projeto acadêmico desenvolvido em Java (Servlet + JSP), sem framework de aplica
 src/java/
 ├── api/          API REST (/api/*): servlet, roteador, controlador genérico, validações
 │   └── repositorio/  Adaptadores dos DAOs para a interface Repositorio
-├── controller/   Servlets das telas (AlunoController, PlanoController, ...)
-├── factory/      Ações por recurso (Command): CriarAction, EditarAction, SalvarAction, ...
+├── controller/   Servlets das telas, todos sobre a base ControladorAcoes
+├── factory/      Ações das telas (Command) e a FabricaAcoes que as cria
 ├── dao/          Acesso ao banco com JDBC e PreparedStatement
-├── model/        Entidades (com Builder) e decorators de serviços adicionais
-├── util/         Conexão com o banco e filtro de encoding
+├── model/        Entidades (com Builder), decorators, objetos de valor (Dinheiro, Cpf)
+├── util/         Conexão com o banco, filtro de encoding, texto seguro e mensagens de erro
 └── docs/
     ├── database/          Scripts SQL
     ├── docker-compose.yml MySQL para desenvolvimento
@@ -75,10 +75,15 @@ Cada decorator recebe o seu `ServicoAdicional` (código, descrição e valor) pe
 esses dados vêm da tabela `servico_adicional`; nos testes, são criados em memória. O decorator não acessa
 o banco e rejeita um adicional de código diferente do seu.
 
+O `model.MontadorAdicionais` liga cada código ao seu decorator por um mapa (`"PRE_TREINO" → PreTreino::new`),
+e o `model.OrcamentoAdicionais` aplica a cadeia e monta o resultado usado pela tela e pela API.
+
 ### Outros padrões
 
 - **Builder** — criação das entidades (`Plano.getBuilder().comNome(...).constroi()`).
-- **Command** — cada ação implementa `factory.ICommand` e é escolhida pelo parâmetro `acao`.
+- **Command** — cada ação das telas implementa `factory.ICommand`.
+- **Factory** — `factory.FabricaAcoes` cria a ação a partir do recurso e do parâmetro `acao`
+  (`plano` + `listar` → `factory.plano.ListarAction`). Aceita só letras e só classes que implementam `ICommand`.
 - **DAO** — uma classe de acesso a dados por entidade, isolando o SQL.
 - **Adapter** — `api.repositorio.*RepositorioJdbc` adaptam cada DAO à interface `api.Repositorio<T>`.
 - **Front Controller** — `api.ApiServlet` recebe todo `/api/*` e o `api.RoteadorApi` escolhe o recurso.
@@ -87,6 +92,33 @@ o banco e rejeita um adicional de código diferente do seu.
 A API depende só das interfaces `Repositorio<T>` e `Validador<T>` (inversão de dependência). As
 implementações são montadas em um único ponto, `ApiServlet.init()`, e nos testes são trocadas por fakes
 em memória.
+
+## Princípios aplicados
+
+### SOLID
+
+| Princípio | Onde |
+| --- | --- |
+| **S** — responsabilidade única | `ApiServlet` só traduz HTTP; `RoteadorApi` só escolhe o recurso e converte erros; `ControladorRest` só aplica o CRUD; `Validacoes` só valida; DAOs só acessam o banco |
+| **O** — aberto/fechado | Adicional novo = subclasse de `AdicionaisMatricula` + uma entrada no mapa do `MontadorAdicionais`. Ação de tela nova = classe nova no pacote, sem mexer na `FabricaAcoes`. Recurso REST novo = uma linha em `ApiServlet.init()` |
+| **L** — substituição de Liskov | Qualquer `Servico` (a `Matricula` ou um decorator) pode ser decorado de novo; qualquer `Repositorio<T>` (JDBC ou fake) serve ao `ControladorRest` |
+| **I** — segregação de interfaces | `Servico` tem 2 métodos; `AdicionaisMatriculaRecurso` depende de duas interfaces de 1 método (`FonteMatriculas`, `FonteAdicionais`) em vez do `Repositorio` inteiro |
+| **D** — inversão de dependência | API e decorators recebem as dependências pelo construtor; nenhum decorator acessa o banco |
+
+Limitação conhecida: as ações das telas (`factory/*Action`) ainda criam os DAOs com `new`, como no
+projeto original. A inversão de dependência completa foi feita na API.
+
+### Calistenia de Objetos
+
+- **Encapsular primitivos** — `model.Dinheiro` (nunca negativo, centavos exatos com `BigDecimal`) e
+  `model.Cpf` (11 dígitos, guardado com máscara) substituem `double` e `String`.
+- **Sem abreviações** — nomes completos (`plano`, `matricula`, `alunos` no lugar de `pla`, `mat`, `lAluno`).
+- **Sem `else` nas classes novas** — validações e controladores usam retorno antecipado.
+- **Classes pequenas** — cada classe da API tem uma responsabilidade e poucas dezenas de linhas.
+- **Imutabilidade** — `Dinheiro`, `Cpf`, decorators, `RequisicaoApi`, `RespostaApi` e `OrcamentoAdicionais` são imutáveis.
+
+Limitação conhecida: as entidades mantêm getters (Gson e as JSPs dependem deles) e alguns campos ainda
+são `String` (`status`, `situacao`, `objetivo`).
 
 ## Como executar
 
@@ -125,7 +157,13 @@ docker exec -i academia-mysql mysql -uroot -psistema_root_dev < src/java/docs/da
 3. Configure o Tomcat 9 como servidor do projeto.
 4. Execute (**Run**). A aplicação abre em `http://localhost:8080/WebApplication1`.
 
-A conexão com o banco é configurada em `src/java/util/DBConnector.java`.
+A conexão usa estas variáveis de ambiente; sem elas, valem os padrões de desenvolvimento:
+
+| Variável | Padrão |
+| --- | --- |
+| `ACADEMIA_DB_URL` | `jdbc:mysql://localhost:3307/academia` |
+| `ACADEMIA_DB_USER` | `root` |
+| `ACADEMIA_DB_PASSWORD` | `sistema_root_dev` |
 
 ## Testes
 
@@ -136,6 +174,16 @@ Testes unitários em `test/`, com JUnit 5. Não dependem de banco nem de servido
 | `model.AdicionaisMatriculaTest` | Cada decorator soma seu valor e sua descrição, encadeamento de vários decorators, ordem da descrição, soma sem erro de ponto flutuante, base intacta e validação dos argumentos |
 | `model.MatriculaTest` | `Matricula` como componente concreto do decorator e erro quando o plano não foi carregado |
 | `model.MontadorAdicionaisTest` | Escolha do decorator pelo código do adicional |
+| `model.OrcamentoAdicionaisTest` | Cadeia de decorators aplicada e resultado montado |
+| `model.DinheiroTest` | Igualdade, soma exata, arredondamento, rejeição de negativo e formato JSON |
+| `model.CpfTest` | Formato, máscara, dígitos verificadores e formato JSON |
+| `model.DatasTest` | Datas ISO estritas (rejeita 30 de fevereiro e mês 13) |
+| `model.AlunoJsonTest` | Contrato JSON do aluno com as telas e a API (`dataNascimento`, `cpf`) |
+| `dao.MatriculaDaoTest` | Regra de preço: descontos de fidelidade e de estudante, arredondamento |
+| `factory.FabricaAcoesTest` | Criação das ações e rejeição de nomes inválidos ou classes que não são `ICommand` |
+| `controller.ControladorAcoesTest` | Ações que gravam exigem POST |
+| `util.TextoSeguroTest` | Texto da URL não consegue fechar a tag `<script>` (proteção contra XSS) |
+| `util.MensagensTest` | Mensagens para a tela sem SQL nem detalhes internos |
 | `api.ControladorRestTest` | Verbos, status (200, 201, 204, 400, 404, 405, 409, 500), `Location`, `Allow`, id da URL x corpo, sub-recursos |
 | `api.RequisicaoApiTest` | Interpretação do caminho `/recurso/{id}/sub` |
 | `api.ValidacoesTest` | Regras de entrada de cada recurso (espelham as restrições do banco) |
@@ -182,7 +230,7 @@ Todo erro responde `{ "error": "mensagem" }`. Erros de validação trazem també
 
 | Status | Quando |
 | --- | --- |
-| `400 Bad Request` | JSON malformado, tipo de campo errado, corpo fora de UTF-8, id não numérico ou validação |
+| `400 Bad Request` | JSON malformado, tipo de campo errado, corpo fora de UTF-8, id não numérico, data inexistente, CPF inválido, valor negativo ou outra validação |
 | `404 Not Found` | Recurso ou id inexistente |
 | `405 Method Not Allowed` | Verbo não suportado no caminho (cabeçalho `Allow` lista os aceitos) |
 | `409 Conflict` | Violação de integridade: CPF/CREF/nome duplicado, aluno/plano inexistente, plano com matrículas |
@@ -203,7 +251,7 @@ Content-Type: application/json
 HTTP/1.1 201 Created
 Location: /WebApplication1/api/planos/5
 
-{ "id": 5, "nome": "Trimestral Plus", "duracaoMeses": 3, "valorMensal": 119.9, "descricao": "Musculação + aulas", "ativo": true, "matriculasVinculadas": 0 }
+{ "id": 5, "nome": "Trimestral Plus", "duracaoMeses": 3, "valorMensal": 119.90, "descricao": "Musculação + aulas", "ativo": true, "matriculasVinculadas": 0 }
 ```
 
 Validação:
@@ -218,13 +266,14 @@ HTTP/1.1 400 Bad Request
 
 | Recurso | Campos de entrada |
 | --- | --- |
-| Aluno | `nome`*, `cpf`*, `dataNascimento`* (`yyyy-MM-dd`), `telefone`, `email`, `status`* (`Ativo`/`Inativo`) |
+| Aluno | `nome`*, `cpf`* (com ou sem máscara, dígitos verificadores conferidos), `dataNascimento`* (`yyyy-MM-dd`), `telefone`, `email`, `status`* (`Ativo`/`Inativo`) |
 | Plano | `nome`*, `duracaoMeses`* (1–36), `valorMensal`* (≥ 0), `descricao`, `ativo` |
 | Instrutor | `nome`*, `cref`*, `especialidade`* (`Musculação`/`Funcional`/`Condicionamento`/`Pilates`), `telefone`, `email`, `status`* |
 | Matrícula | `alunoId`*, `planoId`*, `dataInicio`*, `fidelidadeMeses`* (0/6/12), `descontoEstudante`, `diaVencimento`* (1–28), `situacao`* (`Ativa`/`Cancelada`/`Suspensa`) |
-| Ficha | `alunoId`*, `instrutorId`, `objetivo`* (`Hipertrofia`/`Emagrecimento`/`Condicionamento`), `dataCriacao` (padrão: hoje), `observacoes`, `exercicios` (`nome`*, `series`*, `repeticoes`*, `cargaKg`) |
+| Ficha | `alunoId`*, `instrutorId`, `objetivo`* (`Hipertrofia`/`Emagrecimento`/`Condicionamento`), `dataCriacao` (padrão: hoje), `observacoes` (gravado no POST; o PUT mantém o valor atual, como a tela), `exercicios` (`nome`*, `series`*, `repeticoes`*, `cargaKg`) |
 
-\* obrigatório. Na ficha, a `ordem` dos exercícios segue a posição na lista.
+\* obrigatório. Na ficha, a `ordem` dos exercícios segue a posição na lista. Valores monetários
+não podem ser negativos e datas inexistentes (ex.: `2024-02-30`) são rejeitadas.
 
 ### Adicionais da matrícula (Decorator)
 
@@ -247,11 +296,12 @@ Calcula o valor mensal da matrícula com os adicionais aplicados como decorators
 }
 ```
 
-Código desconhecido retorna `400`; matrícula inexistente, `404`.
+Código desconhecido retorna `400`; matrícula ou adicional inexistente no banco, `404`.
 
 ## Telas
 
-As telas usam um servlet por recurso, com a ação no parâmetro `acao`.
+As telas usam um servlet por recurso, com a ação no parâmetro `acao`. `salvar` e `excluir` só aceitam
+POST (GET responde `405`); ação inexistente responde `404`; id inválido na URL, `400`.
 
 | Recurso | URL | Ações |
 | --- | --- | --- |

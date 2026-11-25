@@ -3,6 +3,7 @@ package api;
 import java.util.ArrayList;
 import java.util.List;
 import model.Aluno;
+import model.Cpf;
 import model.FichaExercicio;
 import model.FichaTreino;
 import model.Instrutor;
@@ -28,10 +29,9 @@ public final class Validacoes {
             if (plano.getDuracaoMeses() < 1 || plano.getDuracaoMeses() > 36) {
                 erros.add("duracaoMeses deve estar entre 1 e 36");
             }
+            // negativo já é barrado pelo próprio Dinheiro
             if (plano.getValorMensal() == null) {
                 erros.add("valorMensal é obrigatório");
-            } else if (plano.getValorMensal() < 0) {
-                erros.add("valorMensal deve ser maior ou igual a zero");
             }
             return erros;
         };
@@ -41,7 +41,7 @@ public final class Validacoes {
         return aluno -> {
             List<String> erros = new ArrayList<>();
             texto(erros, aluno.getNome(), "nome");
-            texto(erros, aluno.getCpf(), "cpf");
+            cpf(erros, aluno.getCpf());
             presente(erros, aluno.getDataNascimento(), "dataNascimento");
             umDe(erros, aluno.getStatus(), STATUS, "status");
             return erros;
@@ -88,6 +88,10 @@ public final class Validacoes {
             }
             for (int i = 0; i < ficha.getExercicios().size(); i++) {
                 FichaExercicio exercicio = ficha.getExercicios().get(i);
+                if (exercicio == null) {
+                    erros.add("exercicios[" + i + "] deve ser um objeto");
+                    continue;
+                }
                 String prefixo = "exercicios[" + i + "].";
                 texto(erros, exercicio.getNome(), prefixo + "nome");
                 positivo(erros, exercicio.getSeries(), prefixo + "series");
@@ -95,6 +99,17 @@ public final class Validacoes {
             }
             return erros;
         };
+    }
+
+    // o formato já é garantido pelo Cpf; aqui só os dígitos verificadores
+    private static void cpf(List<String> erros, Cpf cpf) {
+        if (cpf == null) {
+            erros.add("cpf é obrigatório");
+            return;
+        }
+        if (!cpf.digitosVerificadoresValidos()) {
+            erros.add("cpf com dígitos verificadores inválidos");
+        }
     }
 
     private static void texto(List<String> erros, String valor, String campo) {

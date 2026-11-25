@@ -3,29 +3,26 @@ package model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.math.BigDecimal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class AdicionaisMatriculaTest {
 
     private static final ServicoAdicional BIOIMPEDANCIA =
-            new ServicoAdicional("BIOIMPEDANCIA", "Bioimpedância", new BigDecimal("20.00"));
+            new ServicoAdicional("BIOIMPEDANCIA", "Bioimpedância", Dinheiro.de("20.00"));
     private static final ServicoAdicional CADEIRA_MASSAGEM =
-            new ServicoAdicional("CADEIRA_MASSAGEM", "Cadeira de Massagem", new BigDecimal("30.00"));
+            new ServicoAdicional("CADEIRA_MASSAGEM", "Cadeira de Massagem", Dinheiro.de("30.00"));
     private static final ServicoAdicional PRE_TREINO =
-            new ServicoAdicional("PRE_TREINO", "Pré-treino", new BigDecimal("12.30"));
+            new ServicoAdicional("PRE_TREINO", "Pré-treino", Dinheiro.de("12.30"));
 
-    private static final double DELTA = 0.0001;
-
-    private final Servico planoMensal = new ServicoFixo("Mensal", 129.90);
+    private final Servico planoMensal = new ServicoFixo("Mensal", Dinheiro.de("129.90"));
 
     @Test
     @DisplayName("Bioimpedância soma seu valor ao custo do serviço base")
     void bioimpedanciaSomaValorAoCusto() {
         Servico servico = new Bioimpedancia(planoMensal, BIOIMPEDANCIA);
 
-        assertEquals(149.90, servico.custo(), DELTA);
+        assertEquals(Dinheiro.de("149.90"), servico.custo());
     }
 
     @Test
@@ -33,7 +30,7 @@ class AdicionaisMatriculaTest {
     void cadeiraMassagemSomaValorAoCusto() {
         Servico servico = new CadeiraMassagem(planoMensal, CADEIRA_MASSAGEM);
 
-        assertEquals(159.90, servico.custo(), DELTA);
+        assertEquals(Dinheiro.de("159.90"), servico.custo());
     }
 
     @Test
@@ -41,7 +38,7 @@ class AdicionaisMatriculaTest {
     void preTreinoSomaValorAoCusto() {
         Servico servico = new PreTreino(planoMensal, PRE_TREINO);
 
-        assertEquals(142.20, servico.custo(), DELTA);
+        assertEquals(Dinheiro.de("142.20"), servico.custo());
     }
 
     @Test
@@ -61,7 +58,7 @@ class AdicionaisMatriculaTest {
                         CADEIRA_MASSAGEM),
                 PRE_TREINO);
 
-        assertEquals(192.20, servico.custo(), DELTA);
+        assertEquals(Dinheiro.de("192.20"), servico.custo());
     }
 
     @Test
@@ -77,17 +74,17 @@ class AdicionaisMatriculaTest {
     void naoAlteraServicoBase() {
         new Bioimpedancia(planoMensal, BIOIMPEDANCIA);
 
-        assertEquals(129.90, planoMensal.custo(), DELTA);
+        assertEquals(Dinheiro.de("129.90"), planoMensal.custo());
         assertEquals("Mensal", planoMensal.getDescricao());
     }
 
     @Test
-    @DisplayName("Soma é feita em BigDecimal, sem erro de ponto flutuante")
+    @DisplayName("Soma é exata, sem erro de ponto flutuante")
     void somaSemErroDePontoFlutuante() {
-        Servico base = new ServicoFixo("Base", 0.1);
-        ServicoAdicional adicional = new ServicoAdicional("PRE_TREINO", "Pré-treino", new BigDecimal("0.2"));
+        Servico base = new ServicoFixo("Base", Dinheiro.de("0.1"));
+        ServicoAdicional adicional = new ServicoAdicional("PRE_TREINO", "Pré-treino", Dinheiro.de("0.2"));
 
-        assertEquals(0.3, new PreTreino(base, adicional).custo());
+        assertEquals(Dinheiro.de("0.30"), new PreTreino(base, adicional).custo());
     }
 
     @Test
@@ -110,9 +107,9 @@ class AdicionaisMatriculaTest {
 
     private static final class ServicoFixo implements Servico {
         private final String descricao;
-        private final double custo;
+        private final Dinheiro custo;
 
-        ServicoFixo(String descricao, double custo) {
+        ServicoFixo(String descricao, Dinheiro custo) {
             this.descricao = descricao;
             this.custo = custo;
         }
@@ -123,7 +120,7 @@ class AdicionaisMatriculaTest {
         }
 
         @Override
-        public double custo() {
+        public Dinheiro custo() {
             return custo;
         }
     }

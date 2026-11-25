@@ -12,6 +12,8 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.google.gson.Gson;
+import util.TextoSeguro;
+import util.Mensagens;
 
 /**
  *
@@ -24,14 +26,14 @@ public class ListarAction implements ICommand {
         PlanoDao planoDao = new PlanoDao();
         Gson gson = new Gson();
         boolean somenteAtivos = "1".equals(request.getParameter("somenteAtivos"));
-        request.setAttribute("aviso", request.getParameter("aviso"));
+        request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("aviso")));
 
         try {
             List<Plano> listaPlano = planoDao.consultarTodos(somenteAtivos);
             request.setAttribute("planosJson", gson.toJson(listaPlano));
         } catch (ClassNotFoundException | SQLException ex) {
             request.setAttribute("planosJson", "[]");
-            request.setAttribute("aviso", ex.getMessage());
+            request.setAttribute("aviso", TextoSeguro.paraScript(Mensagens.paraUsuario(ex)));
         }
 
         request.getRequestDispatcher("plano/listar.jsp").forward(request, response);

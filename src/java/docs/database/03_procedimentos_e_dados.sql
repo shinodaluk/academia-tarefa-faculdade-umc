@@ -85,11 +85,11 @@ ON DUPLICATE KEY UPDATE
   valor_mensal = VALUES(valor_mensal);
 
 INSERT INTO aluno (nome, cpf, data_nascimento, telefone, email, status) VALUES
- ('Ana Beatriz Ramos',   '412.889.100-33', '1996-04-12', '(11) 98812-4410', 'ana.ramos@email.com',  'Ativo'),
- ('Carlos Eduardo Lima', '277.540.918-02', '1988-11-03', '(11) 99671-2088', 'carlos.lima@email.com','Ativo'),
- ('Daniela Prado',       '905.331.277-41', '2001-07-25', '(11) 97440-3319', 'dani.prado@email.com', 'Ativo'),
- ('Eduardo Nakamura',    '188.402.663-70', '1993-02-17', '(11) 96522-7781', 'edu.naka@email.com',   'Inativo'),
- ('Fernanda Quirino',    '650.118.294-15', '1999-09-08', '(11) 98330-5512', 'fe.quirino@email.com', 'Ativo');
+ ('Ana Beatriz Ramos',   '412.889.100-29', '1996-04-12', '(11) 98812-4410', 'ana.ramos@email.com',  'Ativo'),
+ ('Carlos Eduardo Lima', '277.540.918-01', '1988-11-03', '(11) 99671-2088', 'carlos.lima@email.com','Ativo'),
+ ('Daniela Prado',       '905.331.277-34', '2001-07-25', '(11) 97440-3319', 'dani.prado@email.com', 'Ativo'),
+ ('Eduardo Nakamura',    '188.402.663-05', '1993-02-17', '(11) 96522-7781', 'edu.naka@email.com',   'Inativo'),
+ ('Fernanda Quirino',    '650.118.294-80', '1999-09-08', '(11) 98330-5512', 'fe.quirino@email.com', 'Ativo');
 
 INSERT INTO instrutor (nome, cref, especialidade, telefone, email, status) VALUES
  ('Marcos Aurélio Dias', '018342-G/SP', 'Musculação',     '(11) 98110-2244', 'marcos@vertice.com',  'Ativo'),

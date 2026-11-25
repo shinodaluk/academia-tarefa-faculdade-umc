@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import util.Mensagens;
 
 /**
  *
@@ -48,7 +49,7 @@ public class SalvarAction implements ICommand {
             request.setAttribute("redirect", request.getContextPath() + "/ficha?acao=editar&id=" + id);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         } catch (Exception ex) {
-            String erro = URLEncoder.encode(String.valueOf(ex.getMessage()), StandardCharsets.UTF_8);
+            String erro = URLEncoder.encode(Mensagens.paraUsuario(ex), StandardCharsets.UTF_8);
             String volta = novo ? "acao=criar" : "acao=editar&id=" + id;
             request.setAttribute("redirect", request.getContextPath() + "/ficha?" + volta + "&erro=" + erro);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);

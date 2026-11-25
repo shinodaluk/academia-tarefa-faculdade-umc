@@ -10,6 +10,7 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import model.Dinheiro;
 import model.Plano;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,8 +24,8 @@ class ControladorRestTest {
     @BeforeEach
     void preparar() {
         planos = new PlanosEmMemoria();
-        planos.adicionar("Mensal", 1, 129.90);
-        planos.adicionar("Anual", 12, 89.90);
+        planos.adicionar("Mensal", 1, "129.90");
+        planos.adicionar("Anual", 12, "89.90");
 
         Validador<Plano> validador = plano -> {
             List<String> erros = new ArrayList<>();
@@ -131,6 +132,16 @@ class ControladorRestTest {
     }
 
     @Test
+    @DisplayName("POST com valor que o objeto de valor rejeita retorna 400 com o motivo")
+    void criarValorRejeitadoPeloObjetoDeValor() {
+        RespostaApi resposta = chamar("POST", "/planos", "{\"nome\":\"X\",\"duracaoMeses\":1,\"valorMensal\":-1}");
+
+        assertEquals(400, resposta.status());
+        assertEquals(List.of("Valor monetário não pode ser negativo: -1"), erro(resposta).get("detalhes"));
+        assertFalse(planos.existe(3));
+    }
+
+    @Test
     @DisplayName("POST sem corpo retorna 400")
     void criarSemCorpo() {
         assertEquals(400, chamar("POST", "/planos").status());
@@ -160,7 +171,7 @@ class ControladorRestTest {
 
         assertEquals(200, resposta.status());
         assertEquals("Mensal Plus", ((Plano) resposta.corpo()).getNome());
-        assertEquals(139.90, planos.listar(Map.of()).get(0).getValorMensal());
+        assertEquals(Dinheiro.de("139.90"), planos.listar(Map.of()).get(0).getValorMensal());
     }
 
     @Test

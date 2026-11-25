@@ -10,5 +10,5 @@ package model;
  */
 public interface Servico {
     public String getDescricao();
-    public double custo();
+    public Dinheiro custo();
 }

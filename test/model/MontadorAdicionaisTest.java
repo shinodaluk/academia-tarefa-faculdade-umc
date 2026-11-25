@@ -1,20 +1,21 @@
 package model;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class MontadorAdicionaisTest {
 
-    private final Servico base = Matricula.getBuilder().comDescricao("Mensal").comCustoBase(100).constroi();
+    private final Servico base = Matricula.getBuilder().comDescricao("Mensal").comCustoBase(Dinheiro.de("100")).constroi();
 
     private static ServicoAdicional adicional(String codigo) {
-        return new ServicoAdicional(codigo, codigo, BigDecimal.ONE);
+        return new ServicoAdicional(codigo, codigo, Dinheiro.de("1"));
     }
 
     @Test
@@ -36,5 +37,12 @@ class MontadorAdicionaisTest {
     void reconhece() {
         assertTrue(MontadorAdicionais.reconhece("PRE_TREINO"));
         assertFalse(MontadorAdicionais.reconhece("SAUNA"));
+        assertFalse(MontadorAdicionais.reconhece(null));
+    }
+
+    @Test
+    @DisplayName("Lista os códigos reconhecidos em ordem")
+    void codigos() {
+        assertEquals(List.of("BIOIMPEDANCIA", "CADEIRA_MASSAGEM", "PRE_TREINO"), MontadorAdicionais.codigos());
     }
 }

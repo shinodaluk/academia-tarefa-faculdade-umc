@@ -1,29 +1,36 @@
 package model;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
 
-/** Escolhe o decorator de cada código de serviço adicional. */
+/**
+ * Escolhe o decorator de cada código de serviço adicional.
+ * Adicional novo = nova subclasse de AdicionaisMatricula + uma entrada no mapa.
+ */
 public final class MontadorAdicionais {
 
-    private static final Set<String> CODIGOS = Set.of("BIOIMPEDANCIA", "CADEIRA_MASSAGEM", "PRE_TREINO");
+    private static final Map<String, BiFunction<Servico, ServicoAdicional, Servico>> DECORATORS = Map.of(
+            "BIOIMPEDANCIA", Bioimpedancia::new,
+            "CADEIRA_MASSAGEM", CadeiraMassagem::new,
+            "PRE_TREINO", PreTreino::new);
 
     private MontadorAdicionais() {
     }
 
     public static boolean reconhece(String codigo) {
-        return CODIGOS.contains(codigo);
+        // Map.of lança NullPointerException em containsKey(null)
+        return codigo != null && DECORATORS.containsKey(codigo);
+    }
+
+    public static List<String> codigos() {
+        return DECORATORS.keySet().stream().sorted().toList();
     }
 
     public static Servico decorar(Servico base, ServicoAdicional adicional) {
-        switch (adicional.getCodigo()) {
-            case "BIOIMPEDANCIA":
-                return new Bioimpedancia(base, adicional);
-            case "CADEIRA_MASSAGEM":
-                return new CadeiraMassagem(base, adicional);
-            case "PRE_TREINO":
-                return new PreTreino(base, adicional);
-            default:
-                throw new IllegalArgumentException("Código de adicional não reconhecido: " + adicional.getCodigo());
+        if (!reconhece(adicional.getCodigo())) {
+            throw new IllegalArgumentException("Código de adicional não reconhecido: " + adicional.getCodigo());
         }
+        return DECORATORS.get(adicional.getCodigo()).apply(base, adicional);
     }
 }

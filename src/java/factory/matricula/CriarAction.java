@@ -11,7 +11,7 @@ import factory.ICommand;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.Matricula;
-import org.apache.commons.text.StringEscapeUtils;
+import util.TextoSeguro;
 
 /**
  *
@@ -30,7 +30,7 @@ public class CriarAction implements ICommand {
         request.setAttribute("matriculaJson", gson.toJson(matricula));
         request.setAttribute("alunosJson", gson.toJson(new AlunoDao().consultarTodos("", "")));
         request.setAttribute("planosJson", gson.toJson(new PlanoDao().consultarTodos(false)));
-        request.setAttribute("aviso", StringEscapeUtils.escapeHtml4(request.getParameter("erro")));
+        request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("erro")));
 
         request.getRequestDispatcher("matricula/form.jsp").forward(request, response);
     }

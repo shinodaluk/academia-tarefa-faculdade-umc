@@ -5,7 +5,6 @@
 package model;
 
 import com.google.gson.annotations.JsonAdapter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
@@ -48,80 +47,75 @@ public class FichaTreino {
 
     public static class FichaTreinoBuilder {
 
-        FichaTreino ficTrei = new FichaTreino();
+        FichaTreino ficha = new FichaTreino();
 
         public FichaTreinoBuilder comId(int id){
-            ficTrei.id = id;
+            ficha.id = id;
             return this;
         }
 
         public FichaTreinoBuilder comAlunoId(int alunoId){
-            ficTrei.alunoId = alunoId;
+            ficha.alunoId = alunoId;
             return this;
         }
 
         public FichaTreinoBuilder comInstrutorId(Integer instrutorId){
-            ficTrei.instrutorId = instrutorId;
+            ficha.instrutorId = instrutorId;
             return this;
         }
 
         public FichaTreinoBuilder comObjetivo(String objetivo){
-            ficTrei.objetivo = objetivo;
+            ficha.objetivo = objetivo;
             return this;
         }
 
         public FichaTreinoBuilder doObjetivoHipertrofia(){
-            ficTrei.objetivo = "Hipertrofia";
+            ficha.objetivo = "Hipertrofia";
             return this;
         }
 
         public FichaTreinoBuilder doObjetivoEmagrecimento(){
-            ficTrei.objetivo = "Emagrecimento";
+            ficha.objetivo = "Emagrecimento";
             return this;
         }
 
         public FichaTreinoBuilder doObjetivoCondicionamento(){
-            ficTrei.objetivo = "Condicionamento";
+            ficha.objetivo = "Condicionamento";
             return this;
         }
 
         public FichaTreinoBuilder comDataCriacao(String data){
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            try{
-                ficTrei.dataCriacao = sdf.parse(data);
-            } catch(Exception ex){
-                System.out.println("Erro: " + ex.getMessage());
-            }
+            ficha.dataCriacao = Datas.deIso(data);
             return this;
         }
 
         public FichaTreinoBuilder comObservacoes(String observacoes){
-            ficTrei.observacoes = observacoes;
+            ficha.observacoes = observacoes;
             return this;
         }
 
         public FichaTreinoBuilder comAluno(String aluno){
-            ficTrei.aluno = aluno;
+            ficha.aluno = aluno;
             return this;
         }
 
         public FichaTreinoBuilder comInstrutor(String instrutor){
-            ficTrei.instrutor = instrutor;
+            ficha.instrutor = instrutor;
             return this;
         }
 
         public FichaTreinoBuilder comQtdExercicios(int qtdExercicios){
-            ficTrei.qtdExercicios = qtdExercicios;
+            ficha.qtdExercicios = qtdExercicios;
             return this;
         }
 
         public FichaTreinoBuilder comExercicios(List<FichaExercicio> exercicios){
-            ficTrei.exercicios = exercicios;
+            ficha.exercicios = exercicios;
             return this;
         }
 
         public FichaTreino constroi(){
-            return ficTrei;
+            return ficha;
         }
     }
 }

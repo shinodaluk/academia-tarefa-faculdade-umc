@@ -5,7 +5,6 @@
 package model;
 
 import com.google.gson.annotations.JsonAdapter;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -26,11 +25,11 @@ public class Matricula implements Servico {
 
     private String aluno;
     private String plano;
-    private double valorFinal;
+    private Dinheiro valorFinal;
     private int diasAtraso;
     
     private String descricao;
-    private Double custoBase;
+    private Dinheiro custoBase;
 
     public Matricula() {
         
@@ -47,7 +46,7 @@ public class Matricula implements Servico {
     public Date getCriadoEm() { return criado_em; }
     public String getAluno() { return aluno; }
     public String getPlano() { return plano; }
-    public double getValorFinal() { return valorFinal; }
+    public Dinheiro getValorFinal() { return valorFinal; }
     public int getDiasAtraso() { return diasAtraso; }
 
     public static MatriculaBuilder getBuilder() {
@@ -63,7 +62,7 @@ public class Matricula implements Servico {
     } 
 
     @Override
-    public double custo(){
+    public Dinheiro custo(){
         if (custoBase == null) {
             throw new IllegalStateException("Custo do plano não carregado; consulte a matrícula no banco de dados.");
         }
@@ -72,118 +71,103 @@ public class Matricula implements Servico {
 
     public static class MatriculaBuilder {
 
-        Matricula mat = new Matricula();
+        Matricula matricula = new Matricula();
 
         public MatriculaBuilder comId(int id){
-            mat.id = id;
+            matricula.id = id;
             return this;
         }
 
         public MatriculaBuilder comAlunoId(int alunoId){
-            mat.alunoId = alunoId;
+            matricula.alunoId = alunoId;
             return this;
         }
 
         public MatriculaBuilder comPlanoId(int planoId){
-            mat.planoId = planoId;
+            matricula.planoId = planoId;
             return this;
         }
 
         public MatriculaBuilder comDataInicio(String data){
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            try{
-                mat.dataInicio = sdf.parse(data);
-            } catch(Exception ex){
-                System.out.println("Erro: " + ex.getMessage());
-            }
+            matricula.dataInicio = Datas.deIso(data);
             return this;
         }
 
         public MatriculaBuilder comFidelidadeMeses(int fidelidadeMeses){
-            mat.fidelidadeMeses = fidelidadeMeses;
+            matricula.fidelidadeMeses = fidelidadeMeses;
             return this;
         }
 
         public MatriculaBuilder comDescontoEstudante(boolean descontoEstudante){
-            mat.descontoEstudante = descontoEstudante;
+            matricula.descontoEstudante = descontoEstudante;
             return this;
         }
 
         public MatriculaBuilder doDescontoEstudante(){
-            mat.descontoEstudante = true;
+            matricula.descontoEstudante = true;
             return this;
         }
 
         public MatriculaBuilder comDiaVencimento(int diaVencimento){
-            mat.diaVencimento = diaVencimento;
+            matricula.diaVencimento = diaVencimento;
             return this;
         }
 
         public MatriculaBuilder comSituacao(String situacao){
-            mat.situacao = situacao;
+            matricula.situacao = situacao;
             return this;
         }
 
         public MatriculaBuilder doSituacaoAtiva(){
-            mat.situacao = "Ativa";
+            matricula.situacao = "Ativa";
             return this;
         }
 
         public MatriculaBuilder doSituacaoCancelada(){
-            mat.situacao = "Cancelada";
+            matricula.situacao = "Cancelada";
             return this;
         }
 
         public MatriculaBuilder doSituacaoSuspensa(){
-            mat.situacao = "Suspensa";
+            matricula.situacao = "Suspensa";
             return this;
         }
 
         public MatriculaBuilder comAluno(String aluno){
-            mat.aluno = aluno;
+            matricula.aluno = aluno;
             return this;
         }
 
         public MatriculaBuilder comPlano(String plano){
-            mat.plano = plano;
+            matricula.plano = plano;
             return this;
         }
 
-        public MatriculaBuilder comValorFinal(double valorFinal){
-            mat.valorFinal = valorFinal;
+        public MatriculaBuilder comValorFinal(Dinheiro valorFinal){
+            matricula.valorFinal = valorFinal;
             return this;
         }
 
         public MatriculaBuilder comDiasAtraso(int diasAtraso){
-            mat.diasAtraso = diasAtraso;
+            matricula.diasAtraso = diasAtraso;
             return this;
         }
 
         public MatriculaBuilder comDescricao(String descricao){
-            mat.descricao = descricao;
+            matricula.descricao = descricao;
             return this;
         }
 
-        public MatriculaBuilder comCustoBase(double custoBase){
-            mat.custoBase = custoBase;
+        public MatriculaBuilder comCustoBase(Dinheiro custoBase){
+            matricula.custoBase = custoBase;
             return this;
         }
 
-        public MatriculaBuilder comCriadoEm(int dia, int mes, int ano){
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            String data = dia + "/" + mes + "/" + ano;
-            try{
-                mat.criado_em = sdf.parse(data);
-            } catch(Exception ex){
-                System.out.println("Erro: " + ex.getMessage());
-            }
-            return this;
-        }
         
         
 
         public Matricula constroi(){
-            return mat;
+            return matricula;
         }
     }
 }

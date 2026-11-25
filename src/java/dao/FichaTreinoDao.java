@@ -55,11 +55,11 @@ public class FichaTreinoDao {
     }
 
     public void deletar(FichaTreino ficha) throws ClassNotFoundException, SQLException {
-        Connection con = getConexao();
-        PreparedStatement comando = con.prepareStatement("DELETE FROM ficha_treino WHERE id = ?");
-        comando.setInt(1, ficha.getId());
-        comando.execute();
-        con.close();
+        try (Connection con = getConexao()) {
+            PreparedStatement comando = con.prepareStatement("DELETE FROM ficha_treino WHERE id = ?");
+            comando.setInt(1, ficha.getId());
+            comando.execute();
+        }
     }
 
     // observacoes fica de fora: o form não tem o campo e apagaria o valor gravado
@@ -87,67 +87,66 @@ public class FichaTreinoDao {
     }
 
     public FichaTreino consultarById(FichaTreino ficha) throws Exception {
-        Connection con = getConexao();
-        PreparedStatement comando = con.prepareStatement("SELECT * FROM ficha_treino WHERE id = ?");
-        comando.setInt(1, ficha.getId());
-        ResultSet rs = comando.executeQuery();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        if (rs.next()) {
-            // wasNull só vale logo após o getInt da coluna
-            Integer instrutorId = rs.getInt("instrutor_id");
-            if (rs.wasNull()) instrutorId = null;
-            FichaTreino f = FichaTreino.getBuilder()
-                .comId(rs.getInt("id"))
-                .comAlunoId(rs.getInt("aluno_id"))
-                .comInstrutorId(instrutorId)
-                .comObjetivo(rs.getString("objetivo"))
-                .comDataCriacao(sdf.format(rs.getDate("data_criacao")))
-                .comObservacoes(rs.getString("observacoes"))
-                .comExercicios(new FichaExercicioDao().consultarTodos(rs.getInt("id")))
-                .constroi();
-            con.close();
-            return f;
-        }
-        con.close();
+        try (Connection con = getConexao()) {
+            PreparedStatement comando = con.prepareStatement("SELECT * FROM ficha_treino WHERE id = ?");
+            comando.setInt(1, ficha.getId());
+            ResultSet rs = comando.executeQuery();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            if (rs.next()) {
+                // wasNull só vale logo após o getInt da coluna
+                Integer instrutorId = rs.getInt("instrutor_id");
+                if (rs.wasNull()) instrutorId = null;
+                FichaTreino f = FichaTreino.getBuilder()
+                    .comId(rs.getInt("id"))
+                    .comAlunoId(rs.getInt("aluno_id"))
+                    .comInstrutorId(instrutorId)
+                    .comObjetivo(rs.getString("objetivo"))
+                    .comDataCriacao(sdf.format(rs.getDate("data_criacao")))
+                    .comObservacoes(rs.getString("observacoes"))
+                    .comExercicios(new FichaExercicioDao().consultarTodos(rs.getInt("id")))
+                    .constroi();
+                return f;
+            }
 
-        throw new RegistroNaoEncontradoException("Ficha de treino não encontrada");
+            throw new RegistroNaoEncontradoException("Ficha de treino não encontrada");
+        }
     }
 
     public List<FichaTreino> consultarTodos(String objetivo) throws ClassNotFoundException, SQLException {
-        Connection con = getConexao();
-        String sql = """
-            SELECT f.id, a.nome AS aluno, f.objetivo,
-                   COALESCE(i.nome, '— não vinculado') AS instrutor,
-                   COUNT(e.id) AS qtd_exercicios, f.data_criacao
-            FROM ficha_treino f
-            JOIN aluno a          ON a.id = f.aluno_id
-            LEFT JOIN instrutor i ON i.id = f.instrutor_id
-            LEFT JOIN ficha_exercicio e ON e.ficha_id = f.id
-            CROSS JOIN (SELECT ? AS objetivo) AS prm
-            WHERE (prm.objetivo = '' OR f.objetivo = prm.objetivo)
-            GROUP BY f.id, a.nome, f.objetivo, i.nome, f.data_criacao
-            ORDER BY f.data_criacao DESC
-        """;
-        PreparedStatement comando = con.prepareStatement(sql);
-        comando.setString(1, objetivo == null ? "" : objetivo);
-        ResultSet rs = comando.executeQuery();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        List<FichaTreino> lFicha = new ArrayList<>();
+        try (Connection con = getConexao()) {
+            String sql = """
+                SELECT f.id, a.nome AS aluno, f.objetivo,
+                       COALESCE(i.nome, '— não vinculado') AS instrutor,
+                       COUNT(e.id) AS qtd_exercicios, f.data_criacao
+                FROM ficha_treino f
+                JOIN aluno a          ON a.id = f.aluno_id
+                LEFT JOIN instrutor i ON i.id = f.instrutor_id
+                LEFT JOIN ficha_exercicio e ON e.ficha_id = f.id
+                CROSS JOIN (SELECT ? AS objetivo) AS prm
+                WHERE (prm.objetivo = '' OR f.objetivo = prm.objetivo)
+                GROUP BY f.id, a.nome, f.objetivo, i.nome, f.data_criacao
+                ORDER BY f.data_criacao DESC
+            """;
+            PreparedStatement comando = con.prepareStatement(sql);
+            comando.setString(1, objetivo == null ? "" : objetivo);
+            ResultSet rs = comando.executeQuery();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            List<FichaTreino> fichas = new ArrayList<>();
 
-        while(rs.next()){
-            FichaTreino f = FichaTreino.getBuilder()
-                .comId(rs.getInt("id"))
-                .comAluno(rs.getString("aluno"))
-                .comObjetivo(rs.getString("objetivo"))
-                .comInstrutor(rs.getString("instrutor"))
-                .comQtdExercicios(rs.getInt("qtd_exercicios"))
-                .comDataCriacao(sdf.format(rs.getDate("data_criacao")))
-                .constroi();
-            lFicha.add(f);
+            while(rs.next()){
+                FichaTreino f = FichaTreino.getBuilder()
+                    .comId(rs.getInt("id"))
+                    .comAluno(rs.getString("aluno"))
+                    .comObjetivo(rs.getString("objetivo"))
+                    .comInstrutor(rs.getString("instrutor"))
+                    .comQtdExercicios(rs.getInt("qtd_exercicios"))
+                    .comDataCriacao(sdf.format(rs.getDate("data_criacao")))
+                    .constroi();
+                fichas.add(f);
+            }
+
+            return fichas;
         }
-
-        con.close();
-        return lFicha;
     }
 
     private void setInstrutor(PreparedStatement comando, int posicao, Integer instrutorId) throws SQLException {

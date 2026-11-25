@@ -23,7 +23,7 @@
 <script>window.CONTEXTO = '${pageContext.request.contextPath}';</script>
 
 <script type="application/json" id="dados-erro">
-{"status":${pageContext.errorData.statusCode}, "message": ${pageContext.errorData.throwable.message}}
+{"status": 404}
 </script>
 
 <div id="app" class="layout" v-cloak>
@@ -51,7 +51,7 @@
     <section class="bloco-erro">
       <div class="codigo-erro">{{ erro.status || 404 }}</div>
       <div class="texto-erro">
-        <p class="lead-erro">{{ erro.status || "O endereço acessado não existe ou o registro foi removido."}}</p>
+        <p class="lead-erro">O endereço acessado não existe ou o registro foi removido.</p>
         <p class="nota-erro">Confira o link ou volte para uma das listas. Se o registro foi excluído, ele não aparece mais nas buscas.</p>
         <div class="acoes-form">
           <a class="btn btn-primary" href="${pageContext.request.contextPath}/aluno">Ir para alunos</a>

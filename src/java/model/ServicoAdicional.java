@@ -1,13 +1,11 @@
 package model;
 
-import java.math.BigDecimal;
-
 public class ServicoAdicional {
     private final String codigo;
     private final String descricao;
-    private final BigDecimal valorMensal;
+    private final Dinheiro valorMensal;
 
-    public ServicoAdicional(String codigo, String descricao, BigDecimal valorMensal) {
+    public ServicoAdicional(String codigo, String descricao, Dinheiro valorMensal) {
         this.codigo = codigo;
         this.descricao = descricao;
         this.valorMensal = valorMensal;
@@ -21,7 +19,7 @@ public class ServicoAdicional {
         return descricao;
     }
 
-    public BigDecimal getValorMensal() {
+    public Dinheiro getValorMensal() {
         return valorMensal;
     }
 }

@@ -1,59 +1,44 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.aluno;
 
-import model.Aluno;
 import dao.AlunoDao;
 import factory.ICommand;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import model.Aluno;
+import util.Mensagens;
 
-/**
- *
- * @author Shino
- */
 public class SalvarAction implements ICommand {
+
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
         AlunoDao alunoDao = new AlunoDao();
+        String id = request.getParameter("id");
+        boolean novo = id == null || id.isEmpty();
+
         try {
-            String id = request.getParameter("id");
-                    
-            if(id == null || id.isEmpty()) {
-                Aluno novoAluno = Aluno.getBuilder()
-                        .comNome(request.getParameter("nome"))
-                        .comCpf(request.getParameter("cpf"))
-                        .comDataNascimento(request.getParameter("dataNascimento"))
-                        .comTelefone(request.getParameter("telefone"))
-                        .comEmail(request.getParameter("email"))
-                        .comStatus(request.getParameter("status"))
-                        .constroi();
-                        
-                int newId = alunoDao.cadastrar(novoAluno);
-                
-                request.setAttribute("redirect", request.getContextPath() + "/aluno?acao=editar&id=" + newId);
-                request.getRequestDispatcher("redirect.jsp").forward(request, response);
+            Aluno.AlunoBuilder builder = Aluno.getBuilder()
+                    .comNome(request.getParameter("nome"))
+                    .comCpf(request.getParameter("cpf"))
+                    .comDataNascimento(request.getParameter("dataNascimento"))
+                    .comTelefone(request.getParameter("telefone"))
+                    .comEmail(request.getParameter("email"))
+                    .comStatus(request.getParameter("status"));
+
+            if (novo) {
+                id = String.valueOf(alunoDao.cadastrar(builder.constroi()));
             } else {
-                Aluno aluno = Aluno.getBuilder()
-                        .comId(Integer.parseInt(id))
-                        .comNome(request.getParameter("nome"))
-                        .comCpf(request.getParameter("cpf"))
-                        .comDataNascimento(request.getParameter("dataNascimento"))
-                        .comTelefone(request.getParameter("telefone"))
-                        .comEmail(request.getParameter("email"))
-                        .comStatus(request.getParameter("status"))
-                        .constroi();
-                
-                alunoDao.atualizar(aluno);
-                
-                request.setAttribute("redirect", request.getContextPath() + "/aluno?acao=editar&id=" + id);
-                request.getRequestDispatcher("redirect.jsp").forward(request, response);
+                alunoDao.atualizar(builder.comId(Integer.parseInt(id)).constroi());
             }
 
+            request.setAttribute("redirect", request.getContextPath() + "/aluno?acao=editar&id=" + id);
+            request.getRequestDispatcher("redirect.jsp").forward(request, response);
         } catch (Exception ex) {
-            request.setAttribute("redirect", request.getContextPath() + "/aluno?acao=criar&erro="+ex.getMessage());
+            // volta para a mesma tela (criar ou editar), sem perder o contexto da edição
+            String erro = URLEncoder.encode(Mensagens.paraUsuario(ex), StandardCharsets.UTF_8);
+            String volta = novo ? "acao=criar" : "acao=editar&id=" + URLEncoder.encode(id, StandardCharsets.UTF_8);
+            request.setAttribute("redirect", request.getContextPath() + "/aluno?" + volta + "&erro=" + erro);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         }
     }

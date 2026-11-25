@@ -3,8 +3,10 @@ package api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import model.Aluno;
+import model.Dinheiro;
 import model.FichaExercicio;
 import model.FichaTreino;
 import model.Instrutor;
@@ -18,7 +20,7 @@ class ValidacoesTest {
     @Test
     @DisplayName("Plano completo é válido")
     void planoValido() {
-        Plano plano = Plano.getBuilder().comNome("Mensal").comDuracaoMeses(1).comValorMensal(129.90).constroi();
+        Plano plano = Plano.getBuilder().comNome("Mensal").comDuracaoMeses(1).comValorMensal(Dinheiro.de("129.90")).constroi();
 
         assertTrue(Validacoes.plano().validar(plano).isEmpty());
     }
@@ -32,17 +34,9 @@ class ValidacoesTest {
     }
 
     @Test
-    @DisplayName("Plano com valor negativo é inválido")
-    void planoValorNegativo() {
-        Plano plano = Plano.getBuilder().comNome("X").comDuracaoMeses(1).comValorMensal(-1.0).constroi();
-
-        assertEquals(List.of("valorMensal deve ser maior ou igual a zero"), Validacoes.plano().validar(plano));
-    }
-
-    @Test
     @DisplayName("Aluno completo é válido")
     void alunoValido() {
-        Aluno aluno = Aluno.getBuilder().comNome("Ana").comCpf("123.456.789-00")
+        Aluno aluno = Aluno.getBuilder().comNome("Ana").comCpf("529.982.247-25")
                 .comDataNascimento("2000-01-31").comStatus("Ativo").constroi();
 
         assertTrue(Validacoes.aluno().validar(aluno).isEmpty());
@@ -57,6 +51,15 @@ class ValidacoesTest {
                 "cpf é obrigatório",
                 "dataNascimento é obrigatório (formato yyyy-MM-dd)",
                 "status deve ser um de [Ativo, Inativo]"), Validacoes.aluno().validar(aluno));
+    }
+
+    @Test
+    @DisplayName("Aluno com CPF de dígitos verificadores errados é inválido")
+    void alunoCpfComDigitoErrado() {
+        Aluno aluno = Aluno.getBuilder().comNome("Ana").comCpf("529.982.247-26")
+                .comDataNascimento("2000-01-31").comStatus("Ativo").constroi();
+
+        assertEquals(List.of("cpf com dígitos verificadores inválidos"), Validacoes.aluno().validar(aluno));
     }
 
     @Test
@@ -89,6 +92,17 @@ class ValidacoesTest {
                 .constroi();
 
         assertEquals(List.of("exercicios[0].nome é obrigatório"), Validacoes.ficha().validar(ficha));
+    }
+
+    @Test
+    @DisplayName("Ficha com exercício nulo na lista é inválida, sem NullPointerException")
+    void fichaComExercicioNulo() {
+        List<FichaExercicio> exercicios = new ArrayList<>();
+        exercicios.add(null);
+        FichaTreino ficha = FichaTreino.getBuilder().comAlunoId(1).comObjetivo("Hipertrofia")
+                .comDataCriacao("2026-11-24").comExercicios(exercicios).constroi();
+
+        assertEquals(List.of("exercicios[0] deve ser um objeto"), Validacoes.ficha().validar(ficha));
     }
 
     @Test

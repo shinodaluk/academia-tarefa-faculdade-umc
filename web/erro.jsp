@@ -23,7 +23,8 @@
 <script>window.CONTEXTO = '${pageContext.request.contextPath}';</script>
 
 <script type="application/json" id="dados-erro">
-    {"status":${requestScope['javax.servlet.error.status_code']}, "message": ${requestScope['javax.servlet.error.message']}}
+    <%-- só o status: a mensagem da exceção pode conter texto do usuário (XSS) e detalhes internos --%>
+    {"status": ${empty requestScope['javax.servlet.error.status_code'] ? 500 : requestScope['javax.servlet.error.status_code']}}
 </script>
 
 <div id="app" class="layout" v-cloak>

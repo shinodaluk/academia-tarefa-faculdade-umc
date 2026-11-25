@@ -1,6 +1,5 @@
 package model;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 
 /** Decorator abstrato: acrescenta um serviço adicional ao serviço decorado. */
@@ -22,9 +21,7 @@ public abstract class AdicionaisMatricula implements Servico {
         return adicional.getDescricao();
     }
 
-    protected final double custoComAdicional() {
-        return BigDecimal.valueOf(servicodecorator.custo())
-                .add(adicional.getValorMensal())
-                .doubleValue();
+    protected final Dinheiro custoComAdicional() {
+        return servicodecorator.custo().somar(adicional.getValorMensal());
     }
 }

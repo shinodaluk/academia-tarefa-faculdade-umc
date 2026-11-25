@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.aluno;
 
 import com.google.gson.Gson;
@@ -10,29 +6,22 @@ import factory.ICommand;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.Aluno;
+import util.TextoSeguro;
 
-/**
- *
- * @author Shino
- */
 public class EditarAction implements ICommand {
+
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String id = request.getParameter("id");
-        AlunoDao alunoDao = new AlunoDao();
-        Aluno aluno = Aluno.getBuilder().comId(Integer.parseInt(id)).constroi();
-        
-        if(id == null) {
+        if (id == null || id.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/aluno?acao=listar");
             return;
         }
-        
-        Aluno alunoEncontrado = alunoDao.consultarById(aluno);
-        
-        Gson gson = new Gson();
-        String alunoJson = gson.toJson(alunoEncontrado);
-        request.setAttribute("alunoJson", alunoJson);
-        
+
+        Aluno aluno = new AlunoDao().consultarById(Aluno.getBuilder().comId(Integer.parseInt(id)).constroi());
+        request.setAttribute("alunoJson", new Gson().toJson(aluno));
+        request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("erro")));
+
         request.getRequestDispatcher("aluno/form.jsp").forward(request, response);
     }
 }

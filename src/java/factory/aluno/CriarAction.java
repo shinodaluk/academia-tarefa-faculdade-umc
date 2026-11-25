@@ -9,7 +9,7 @@ import factory.ICommand;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.Aluno;
-import org.apache.commons.text.StringEscapeUtils;
+import util.TextoSeguro;
 
 /**
  *
@@ -23,7 +23,7 @@ public class CriarAction implements ICommand {
 
         String alunoJson = gson.toJson(aluno);
         request.setAttribute("alunoJson", alunoJson);
-        request.setAttribute("aviso", StringEscapeUtils.escapeHtml4(request.getParameter("erro")));
+        request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("erro")));
         
         request.getRequestDispatcher("aluno/form.jsp").forward(request, response);
     }

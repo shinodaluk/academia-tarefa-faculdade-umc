@@ -11,7 +11,7 @@ import factory.ICommand;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.FichaTreino;
-import org.apache.commons.text.StringEscapeUtils;
+import util.TextoSeguro;
 
 /**
  *
@@ -28,7 +28,7 @@ public class CriarAction implements ICommand {
         request.setAttribute("fichaJson", gson.toJson(ficha));
         request.setAttribute("alunosJson", gson.toJson(new AlunoDao().consultarTodos("", "")));
         request.setAttribute("instrutoresJson", gson.toJson(new InstrutorDao().consultarTodos("", "")));
-        request.setAttribute("aviso", StringEscapeUtils.escapeHtml4(request.getParameter("erro")));
+        request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("erro")));
 
         request.getRequestDispatcher("ficha/form.jsp").forward(request, response);
     }

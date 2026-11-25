@@ -1,16 +1,12 @@
 package api;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import model.Matricula;
 import model.MontadorAdicionais;
-import model.Servico;
+import model.OrcamentoAdicionais;
 import model.ServicoAdicional;
 
 /** GET /api/matriculas/{id}/adicionais?codigos=A,B: valor da matrícula com os decorators aplicados. */
@@ -42,25 +38,11 @@ public class AdicionaisMatriculaRecurso implements RecursoApi {
         Set<String> codigos = lerCodigos(requisicao.parametros().get("codigos"));
         Matricula matricula = matriculas.buscar(ControladorRest.lerId(requisicao.segmentos().get(0)));
 
-        Servico composto = matricula;
-        List<Map<String, Object>> aplicados = new ArrayList<>();
+        List<ServicoAdicional> selecionados = new ArrayList<>();
         for (String codigo : codigos) {
-            ServicoAdicional adicional = adicionais.porCodigo(codigo);
-            composto = MontadorAdicionais.decorar(composto, adicional);
-            aplicados.add(Map.of(
-                    "codigo", adicional.getCodigo(),
-                    "descricao", adicional.getDescricao(),
-                    "valorMensal", adicional.getValorMensal()));
+            selecionados.add(adicionais.porCodigo(codigo));
         }
-
-        Map<String, Object> corpo = new LinkedHashMap<>();
-        corpo.put("matriculaId", matricula.getId());
-        corpo.put("descricaoBase", matricula.getDescricao());
-        corpo.put("custoBase", dinheiro(matricula.custo()));
-        corpo.put("adicionais", aplicados);
-        corpo.put("descricao", composto.getDescricao());
-        corpo.put("totalMensal", dinheiro(composto.custo()));
-        return RespostaApi.ok(corpo);
+        return RespostaApi.ok(OrcamentoAdicionais.calcular(matricula, selecionados));
     }
 
     private static Set<String> lerCodigos(String parametro) {
@@ -79,9 +61,5 @@ public class AdicionaisMatriculaRecurso implements RecursoApi {
             codigos.add(codigo);
         }
         return codigos;
-    }
-
-    private static BigDecimal dinheiro(double valor) {
-        return BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP);
     }
 }

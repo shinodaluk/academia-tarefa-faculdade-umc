@@ -3,10 +3,10 @@ package api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import dao.RegistroNaoEncontradoException;
-import java.math.BigDecimal;
-import java.util.List;
 import java.util.Map;
+import model.Dinheiro;
 import model.Matricula;
+import model.OrcamentoAdicionais;
 import model.ServicoAdicional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test;
 class AdicionaisMatriculaRecursoTest {
 
     private static final Map<String, ServicoAdicional> CATALOGO = Map.of(
-            "BIOIMPEDANCIA", new ServicoAdicional("BIOIMPEDANCIA", "Bioimpedância", new BigDecimal("20.00")),
-            "PRE_TREINO", new ServicoAdicional("PRE_TREINO", "Pré-treino", new BigDecimal("12.30")));
+            "BIOIMPEDANCIA", new ServicoAdicional("BIOIMPEDANCIA", "Bioimpedância", Dinheiro.de("20.00")),
+            "PRE_TREINO", new ServicoAdicional("PRE_TREINO", "Pré-treino", Dinheiro.de("12.30")));
 
     private RoteadorApi roteador;
 
@@ -27,7 +27,7 @@ class AdicionaisMatriculaRecursoTest {
                     if (id != 1) {
                         throw new RegistroNaoEncontradoException("Matrícula não encontrada");
                     }
-                    return Matricula.getBuilder().comId(1).comDescricao("Mensal").comCustoBase(129.90).constroi();
+                    return Matricula.getBuilder().comId(1).comDescricao("Mensal").comCustoBase(Dinheiro.de("129.90")).constroi();
                 },
                 CATALOGO::get);
         roteador = new RoteadorApi(Map.of("matriculas", new SubrecursoDireto(recurso)));
@@ -37,9 +37,8 @@ class AdicionaisMatriculaRecursoTest {
         return roteador.atender(RequisicaoApi.de(metodo, caminho, parametros, "", ""));
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> corpo(RespostaApi resposta) {
-        return (Map<String, Object>) resposta.corpo();
+    private static OrcamentoAdicionais corpo(RespostaApi resposta) {
+        return (OrcamentoAdicionais) resposta.corpo();
     }
 
     @Test
@@ -49,9 +48,9 @@ class AdicionaisMatriculaRecursoTest {
                 Map.of("codigos", "BIOIMPEDANCIA,PRE_TREINO"));
 
         assertEquals(200, resposta.status());
-        assertEquals(new BigDecimal("162.20"), corpo(resposta).get("totalMensal"));
-        assertEquals("Mensal, Bioimpedância, Pré-treino", corpo(resposta).get("descricao"));
-        assertEquals(2, ((List<?>) corpo(resposta).get("adicionais")).size());
+        assertEquals(Dinheiro.de("162.20"), corpo(resposta).totalMensal());
+        assertEquals("Mensal, Bioimpedância, Pré-treino", corpo(resposta).descricao());
+        assertEquals(2, corpo(resposta).adicionais().size());
     }
 
     @Test
@@ -59,7 +58,7 @@ class AdicionaisMatriculaRecursoTest {
     void semCodigos() {
         RespostaApi resposta = chamar("GET", "/matriculas/1/adicionais", Map.of());
 
-        assertEquals(new BigDecimal("129.90"), corpo(resposta).get("totalMensal"));
+        assertEquals(Dinheiro.de("129.90"), corpo(resposta).totalMensal());
     }
 
     @Test
@@ -68,7 +67,7 @@ class AdicionaisMatriculaRecursoTest {
         RespostaApi resposta = chamar("GET", "/matriculas/1/adicionais",
                 Map.of("codigos", "PRE_TREINO, PRE_TREINO"));
 
-        assertEquals(new BigDecimal("142.20"), corpo(resposta).get("totalMensal"));
+        assertEquals(Dinheiro.de("142.20"), corpo(resposta).totalMensal());
     }
 
     @Test

@@ -10,7 +10,7 @@ import factory.ICommand;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.Plano;
-import org.apache.commons.text.StringEscapeUtils;
+import util.TextoSeguro;
 
 /**
  *
@@ -32,7 +32,7 @@ public class EditarAction implements ICommand {
 
         Gson gson = new Gson();
         request.setAttribute("planoJson", gson.toJson(planoEncontrado));
-        request.setAttribute("aviso", StringEscapeUtils.escapeHtml4(request.getParameter("erro")));
+        request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("erro")));
 
         request.getRequestDispatcher("plano/form.jsp").forward(request, response);
     }

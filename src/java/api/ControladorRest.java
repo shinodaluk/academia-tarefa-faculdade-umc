@@ -116,6 +116,9 @@ public class ControladorRest<T> implements RecursoApi {
             entidade = gson.fromJson(json, tipo);
         } catch (JsonParseException | NumberFormatException ex) {
             throw ErroApi.requisicaoInvalida("JSON inválido ou com tipo de campo incorreto.");
+        } catch (IllegalArgumentException ex) {
+            // objeto de valor recusou o campo (ex.: Dinheiro negativo, CPF fora do formato)
+            throw ErroApi.dadosInvalidos(List.of(ex.getMessage()));
         }
 
         List<String> erros = validador.validar(entidade);

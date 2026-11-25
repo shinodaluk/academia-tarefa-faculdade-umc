@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import model.Dinheiro;
 import model.Plano;
 
 /** Repositório fake: guarda planos em memória para testar a API sem banco. */
@@ -15,12 +16,12 @@ class PlanosEmMemoria implements Repositorio<Plano> {
     Exception falhaAoExcluir;
     Map<String, String> ultimosFiltros;
 
-    Plano adicionar(String nome, int duracaoMeses, double valorMensal) {
+    Plano adicionar(String nome, int duracaoMeses, String valorMensal) {
         Plano plano = Plano.getBuilder()
                 .comId(proximoId++)
                 .comNome(nome)
                 .comDuracaoMeses(duracaoMeses)
-                .comValorMensal(valorMensal)
+                .comValorMensal(Dinheiro.de(valorMensal))
                 .doAtivo()
                 .constroi();
         planos.put(plano.getId(), plano);

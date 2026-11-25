@@ -34,45 +34,45 @@ public class FichaExercicio {
 
     public static class FichaExercicioBuilder {
 
-        FichaExercicio ficExer = new FichaExercicio();
+        FichaExercicio exercicio = new FichaExercicio();
 
         public FichaExercicioBuilder comId (int id){
-            ficExer.id = id;
+            exercicio.id = id;
             return this;
         }
 
         public FichaExercicioBuilder comFichaId(int fichaId){
-            ficExer.fichaId = fichaId;
+            exercicio.fichaId = fichaId;
             return this;
         }
 
         public FichaExercicioBuilder comOrdem(int ordem){
-            ficExer.ordem = ordem;
+            exercicio.ordem = ordem;
             return this;
         }
 
         public FichaExercicioBuilder comNome(String nome){
-            ficExer.nome = nome;
+            exercicio.nome = nome;
             return this;
         }
 
         public FichaExercicioBuilder comSeries(int series){
-            ficExer.series = series;
+            exercicio.series = series;
             return this;
         }
 
         public FichaExercicioBuilder comRepeticoes(String repeticoes){
-            ficExer.repeticoes = repeticoes;
+            exercicio.repeticoes = repeticoes;
             return this;
         }
 
         public FichaExercicioBuilder comCargaKg(String cargaKg){
-            ficExer.cargaKg = cargaKg;
+            exercicio.cargaKg = cargaKg;
             return this;
         }
 
         public FichaExercicio constroi(){
-            return ficExer;
+            return exercicio;
         }
     }
 }

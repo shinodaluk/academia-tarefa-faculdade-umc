@@ -6,10 +6,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dao.MatriculaDao;
+import dao.RegistroNaoEncontradoException;
 import dao.ServicoAdicionalDao;
 import factory.ICommand;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.Matricula;
 import model.MontadorAdicionais;
-import model.Servico;
+import model.OrcamentoAdicionais;
 import model.ServicoAdicional;
 
 public class CalcularAdicionaisAction implements ICommand {
@@ -69,34 +69,19 @@ public class CalcularAdicionaisAction implements ICommand {
             return;
         }
 
-        Matricula matricula;
+        OrcamentoAdicionais orcamento;
         try {
-            matricula = new MatriculaDao().consultarById(
+            Matricula matricula = new MatriculaDao().consultarById(
                     Matricula.getBuilder().comId(matriculaId).constroi());
-        } catch (Exception ex) {
-            if ("Matrícula não encontrada".equals(ex.getMessage())) {
-                responderErro(response, gson, HttpServletResponse.SC_NOT_FOUND,
-                        "A matrícula informada não foi encontrada.");
-            } else {
-                responderErro(response, gson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                        "Não foi possível consultar a matrícula.");
-            }
-            return;
-        }
-
-        Servico composto = matricula;
-        List<Map<String, Object>> adicionaisSelecionados = new ArrayList<>();
-        ServicoAdicionalDao adicionaisDao = new ServicoAdicionalDao();
-        try {
+            ServicoAdicionalDao adicionaisDao = new ServicoAdicionalDao();
+            List<ServicoAdicional> selecionados = new ArrayList<>();
             for (String codigo : codigos) {
-                ServicoAdicional adicional = adicionaisDao.consultarPorCodigo(codigo);
-                composto = MontadorAdicionais.decorar(composto, adicional);
-
-                adicionaisSelecionados.add(Map.of(
-                        "codigo", adicional.getCodigo(),
-                        "descricao", adicional.getDescricao(),
-                        "valorMensal", adicional.getValorMensal()));
+                selecionados.add(adicionaisDao.consultarPorCodigo(codigo));
             }
+            orcamento = OrcamentoAdicionais.calcular(matricula, selecionados);
+        } catch (RegistroNaoEncontradoException ex) {
+            responderErro(response, gson, HttpServletResponse.SC_NOT_FOUND, ex.getMessage());
+            return;
         } catch (Exception ex) {
             responderErro(response, gson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Não foi possível calcular os serviços adicionais.");
@@ -104,13 +89,7 @@ public class CalcularAdicionaisAction implements ICommand {
         }
 
         response.setStatus(HttpServletResponse.SC_OK);
-        response.getWriter().write(gson.toJson(Map.of(
-                "matriculaId", matricula.getId(),
-                "descricaoBase", matricula.getDescricao(),
-                "custoBase", BigDecimal.valueOf(matricula.custo()).setScale(2),
-                "adicionais", adicionaisSelecionados,
-                "descricao", composto.getDescricao(),
-                "totalMensal", BigDecimal.valueOf(composto.custo()).setScale(2))));
+        response.getWriter().write(gson.toJson(orcamento));
     }
 
     private Integer lerId(JsonElement valor) {

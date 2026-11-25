@@ -4,7 +4,6 @@
  */
 package model;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -15,7 +14,7 @@ public class Plano {
     private int id;
     private String nome;
     private int duracaoMeses;
-    private Double valorMensal; // wrapper: plano novo vai ao form com o campo vazio, não 0
+    private Dinheiro valorMensal; // null: plano novo vai ao form com o campo vazio, não 0
     private String descricao;
     private boolean ativo;
     private Date criado_em;
@@ -28,7 +27,7 @@ public class Plano {
     public int getId() { return id; }
     public String getNome() { return nome; }
     public int getDuracaoMeses() { return duracaoMeses; }
-    public Double getValorMensal() { return valorMensal; }
+    public Dinheiro getValorMensal() { return valorMensal; }
     public String getDescricao() { return descricao; }
     public boolean isAtivo() { return ativo; }
     public Date getCriadoEm() { return criado_em; }
@@ -40,66 +39,56 @@ public class Plano {
 
     public static class PlanoBuilder {
 
-        Plano pla = new Plano();
+        Plano plano = new Plano();
 
         public PlanoBuilder comId (int id){
-            pla.id = id;
+            plano.id = id;
             return this;
         }
 
         public PlanoBuilder comNome(String nome){
-            pla.nome = nome;
+            plano.nome = nome;
             return this;
         }
 
         public PlanoBuilder comDuracaoMeses (int duracaoMeses){
-            pla.duracaoMeses = duracaoMeses;
+            plano.duracaoMeses = duracaoMeses;
             return this;
         }
 
-        public PlanoBuilder comValorMensal (Double valorMensal){
-            pla.valorMensal = valorMensal;
+        public PlanoBuilder comValorMensal (Dinheiro valorMensal){
+            plano.valorMensal = valorMensal;
             return this;
         }
 
         public PlanoBuilder comDescricao(String descricao){
-            pla.descricao = descricao;
+            plano.descricao = descricao;
             return this;
         }
 
         public PlanoBuilder comAtivo(boolean ativo){
-            pla.ativo = ativo;
+            plano.ativo = ativo;
             return this;
         }
 
         public PlanoBuilder doAtivo(){
-            pla.ativo = true;
+            plano.ativo = true;
             return this;
         }
 
         public PlanoBuilder doInativo(){
-            pla.ativo = false;
+            plano.ativo = false;
             return this;
         }
 
         public PlanoBuilder comMatriculasVinculadas(int matriculasVinculadas){
-            pla.matriculasVinculadas = matriculasVinculadas;
+            plano.matriculasVinculadas = matriculasVinculadas;
             return this;
         }
 
-        public PlanoBuilder comCriadoEm(int dia, int mes, int ano){
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            String data = dia + "/" + mes + "/" + ano;
-            try{
-                pla.criado_em = sdf.parse(data);
-            } catch(Exception ex){
-                System.out.println("Erro: " + ex.getMessage());
-            }
-            return this;
-        }
 
         public Plano constroi(){
-            return pla;
+            return plano;
         }
     }
 }

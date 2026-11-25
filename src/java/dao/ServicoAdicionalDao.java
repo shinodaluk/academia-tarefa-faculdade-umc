@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import model.Dinheiro;
 import model.ServicoAdicional;
 import util.DBConnector;
 
@@ -21,14 +22,15 @@ public class ServicoAdicionalDao {
                 servicos.add(new ServicoAdicional(
                         rs.getString("codigo"),
                         rs.getString("descricao"),
-                        rs.getBigDecimal("valor_mensal")));
+                        Dinheiro.de(rs.getBigDecimal("valor_mensal"))));
             }
         }
 
         return servicos;
     }
 
-    public ServicoAdicional consultarPorCodigo(String codigo) throws ClassNotFoundException, SQLException {
+    public ServicoAdicional consultarPorCodigo(String codigo)
+            throws ClassNotFoundException, SQLException, RegistroNaoEncontradoException {
         String sql = "SELECT codigo, descricao, valor_mensal FROM servico_adicional WHERE codigo = ?";
 
         try (Connection con = DBConnector.getConexaoMySQL();
@@ -37,13 +39,13 @@ public class ServicoAdicionalDao {
 
             try (ResultSet rs = comando.executeQuery()) {
                 if (!rs.next()) {
-                    throw new SQLException("Adicional não cadastrado: " + codigo);
+                    throw new RegistroNaoEncontradoException("Adicional não cadastrado: " + codigo);
                 }
 
                 return new ServicoAdicional(
                         rs.getString("codigo"),
                         rs.getString("descricao"),
-                        rs.getBigDecimal("valor_mensal"));
+                        Dinheiro.de(rs.getBigDecimal("valor_mensal")));
             }
         }
     }

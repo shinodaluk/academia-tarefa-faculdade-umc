@@ -20,7 +20,7 @@ public class PreTreino extends AdicionaisMatricula{
     }
 
     @Override
-    public double custo() {
+    public Dinheiro custo() {
         return custoComAdicional();
     }
 }

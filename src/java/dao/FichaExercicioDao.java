@@ -42,26 +42,26 @@ public class FichaExercicioDao {
     }
 
     public List<FichaExercicio> consultarTodos(int fichaId) throws ClassNotFoundException, SQLException {
-        Connection con = getConexao();
-        PreparedStatement comando = con.prepareStatement("SELECT id, ficha_id, ordem, nome, series, repeticoes, carga_kg FROM ficha_exercicio WHERE ficha_id = ? ORDER BY ordem");
-        comando.setInt(1, fichaId);
-        ResultSet rs = comando.executeQuery();
-        List<FichaExercicio> lExercicio = new ArrayList<>();
+        try (Connection con = getConexao()) {
+            PreparedStatement comando = con.prepareStatement("SELECT id, ficha_id, ordem, nome, series, repeticoes, carga_kg FROM ficha_exercicio WHERE ficha_id = ? ORDER BY ordem");
+            comando.setInt(1, fichaId);
+            ResultSet rs = comando.executeQuery();
+            List<FichaExercicio> exercicios = new ArrayList<>();
 
-        while(rs.next()){
-            FichaExercicio e = FichaExercicio.getBuilder()
-                .comId(rs.getInt("id"))
-                .comFichaId(rs.getInt("ficha_id"))
-                .comOrdem(rs.getInt("ordem"))
-                .comNome(rs.getString("nome"))
-                .comSeries(rs.getInt("series"))
-                .comRepeticoes(rs.getString("repeticoes"))
-                .comCargaKg(rs.getString("carga_kg"))
-                .constroi();
-            lExercicio.add(e);
+            while(rs.next()){
+                FichaExercicio e = FichaExercicio.getBuilder()
+                    .comId(rs.getInt("id"))
+                    .comFichaId(rs.getInt("ficha_id"))
+                    .comOrdem(rs.getInt("ordem"))
+                    .comNome(rs.getString("nome"))
+                    .comSeries(rs.getInt("series"))
+                    .comRepeticoes(rs.getString("repeticoes"))
+                    .comCargaKg(rs.getString("carga_kg"))
+                    .constroi();
+                exercicios.add(e);
+            }
+
+            return exercicios;
         }
-
-        con.close();
-        return lExercicio;
     }
 }

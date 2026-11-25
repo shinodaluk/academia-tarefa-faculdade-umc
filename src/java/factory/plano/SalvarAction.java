@@ -4,6 +4,7 @@
  */
 package factory.plano;
 
+import model.Dinheiro;
 import model.Plano;
 import dao.PlanoDao;
 import factory.ICommand;
@@ -11,6 +12,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import util.Mensagens;
 
 /**
  *
@@ -27,7 +29,7 @@ public class SalvarAction implements ICommand {
             Plano.PlanoBuilder builder = Plano.getBuilder()
                     .comNome(request.getParameter("nome"))
                     .comDuracaoMeses(Integer.parseInt(request.getParameter("duracaoMeses")))
-                    .comValorMensal(Double.valueOf(request.getParameter("valorMensal")))
+                    .comValorMensal(Dinheiro.de(request.getParameter("valorMensal")))
                     .comDescricao(request.getParameter("descricao"))
                     // checkbox desmarcado não é enviado no POST
                     .comAtivo(request.getParameter("ativo") != null);
@@ -42,7 +44,7 @@ public class SalvarAction implements ICommand {
             request.setAttribute("redirect", request.getContextPath() + "/plano?acao=editar&id=" + id);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         } catch (Exception ex) {
-            String erro = URLEncoder.encode(String.valueOf(ex.getMessage()), StandardCharsets.UTF_8);
+            String erro = URLEncoder.encode(Mensagens.paraUsuario(ex), StandardCharsets.UTF_8);
             String volta = novo ? "acao=criar" : "acao=editar&id=" + id;
             request.setAttribute("redirect", request.getContextPath() + "/plano?" + volta + "&erro=" + erro);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);

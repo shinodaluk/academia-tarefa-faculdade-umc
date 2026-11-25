@@ -4,7 +4,6 @@
  */
 package model;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -42,91 +41,81 @@ public class Instrutor {
 
     public static class InstrutorBuilder {
 
-        Instrutor inst = new Instrutor();
+        Instrutor instrutor = new Instrutor();
 
         public InstrutorBuilder comId (int id){
-            inst.id = id;
+            instrutor.id = id;
             return this;
         }
 
         public InstrutorBuilder comNome(String nome){
-            inst.nome = nome;
+            instrutor.nome = nome;
             return this;
         }
 
         public InstrutorBuilder comCref(String cref){
-            inst.cref = cref;
+            instrutor.cref = cref;
             return this;
         }
 
         public InstrutorBuilder comEspecialidade(String especialidade){
-            inst.especialidade = especialidade;
+            instrutor.especialidade = especialidade;
             return this;
         }
 
         public InstrutorBuilder doEspecialidadeMusculacao(){
-            inst.especialidade = "Musculação";
+            instrutor.especialidade = "Musculação";
             return this;
         }
 
         public InstrutorBuilder doEspecialidadeFuncional(){
-            inst.especialidade = "Funcional";
+            instrutor.especialidade = "Funcional";
             return this;
         }
 
         public InstrutorBuilder doEspecialidadeCondicionamento(){
-            inst.especialidade = "Condicionamento";
+            instrutor.especialidade = "Condicionamento";
             return this;
         }
 
         public InstrutorBuilder doEspecialidadePilates(){
-            inst.especialidade = "Pilates";
+            instrutor.especialidade = "Pilates";
             return this;
         }
 
         public InstrutorBuilder comTelefone(String telefone){
-            inst.telefone = telefone;
+            instrutor.telefone = telefone;
             return this;
         }
 
         public InstrutorBuilder comEmail(String email){
-            inst.email = email;
+            instrutor.email = email;
             return this;
         }
 
         public InstrutorBuilder comStatus(String status){
-            inst.status = status;
+            instrutor.status = status;
             return this;
         }
 
         public InstrutorBuilder doStatusAtivo(){
-            inst.status = "Ativo";
+            instrutor.status = "Ativo";
             return this;
         }
 
         public InstrutorBuilder doStatusInativo(){
-            inst.status = "Inativo";
+            instrutor.status = "Inativo";
             return this;
         }
 
         public InstrutorBuilder comFichasVinculadas(int fichasVinculadas){
-            inst.fichasVinculadas = fichasVinculadas;
+            instrutor.fichasVinculadas = fichasVinculadas;
             return this;
         }
 
-        public InstrutorBuilder comCriadoEm(int dia, int mes, int ano){
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            String data = dia + "/" + mes + "/" + ano;
-            try{
-                inst.criado_em = sdf.parse(data);
-            } catch(Exception ex){
-                System.out.println("Erro: " + ex.getMessage());
-            }
-            return this;
-        }
 
         public Instrutor constroi(){
-            return inst;
+            return instrutor;
         }
     }
 }
