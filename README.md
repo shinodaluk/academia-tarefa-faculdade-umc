@@ -97,6 +97,368 @@ API e telas dependem só de interfaces (`Repositorio<T>`, `CatalogoAdicionais`, 
 `ControladorAcoes` passa, via `FabricaAcoes`, para cada Action das telas. Nos testes, as mesmas classes
 recebem versões em memória.
 
+## Diagramas
+
+Os diagramas estão em [Mermaid](https://mermaid.js.org/) e o GitHub os desenha direto nesta página.
+
+### Diagrama de classes: Decorator dos adicionais
+
+```mermaid
+classDiagram
+    direction LR
+    class Servico {
+        <<interface>>
+        +getDescricao() String
+        +custo() Dinheiro
+    }
+    class Matricula {
+        -descricao String
+        -custoBase Dinheiro
+        +getDescricao() String
+        +custo() Dinheiro
+    }
+    class AdicionaisMatricula {
+        <<abstract>>
+        #servicodecorator Servico
+        -adicional ServicoAdicional
+        #descricaoAdicional() String
+        #custoComAdicional() Dinheiro
+    }
+    class Bioimpedancia
+    class CadeiraMassagem
+    class PreTreino
+    class ServicoAdicional {
+        -codigo String
+        -descricao String
+        -valorMensal Dinheiro
+    }
+    class MontadorAdicionais {
+        +reconhece(codigo) boolean$
+        +decorar(base, adicional) Servico$
+    }
+    class OrcamentoAdicionais {
+        <<record>>
+        +calcular(matricula, adicionais) OrcamentoAdicionais$
+    }
+
+    Servico <|.. Matricula
+    Servico <|.. AdicionaisMatricula
+    AdicionaisMatricula o--> Servico : decora
+    AdicionaisMatricula --> ServicoAdicional
+    AdicionaisMatricula <|-- Bioimpedancia
+    AdicionaisMatricula <|-- CadeiraMassagem
+    AdicionaisMatricula <|-- PreTreino
+    MontadorAdicionais ..> AdicionaisMatricula : cria pelo código
+    OrcamentoAdicionais ..> MontadorAdicionais
+```
+
+### Diagrama de classes: camadas da API e inversão de dependência
+
+As setas tracejadas mostram o DIP: a API depende só das interfaces de `repositorio`; a única classe
+que conhece as implementações JDBC é `Dependencias`.
+
+```mermaid
+classDiagram
+    direction TB
+    class ApiServlet {
+        +init()
+        #service(request, response)
+    }
+    class RoteadorApi {
+        +atender(RequisicaoApi) RespostaApi
+    }
+    class RecursoApi {
+        <<interface>>
+        +tratar(RequisicaoApi) RespostaApi
+    }
+    class ControladorRest~T~ {
+        +comSubrecurso(nome, RecursoApi) ControladorRest~T~
+    }
+    class AvaliacaoFisicaRecurso
+    class RelacionamentoRecurso~T~
+    class AdicionaisMatriculaRecurso
+    class Validador~T~ {
+        <<interface>>
+        +validar(T) List~String~
+    }
+    class Repositorio~T~ {
+        <<interface>>
+        +listar(filtros) List~T~
+        +buscar(id) T
+        +criar(T) int
+        +atualizar(T)
+        +excluir(id)
+    }
+    class AvaliacoesFisicas {
+        <<interface>>
+        +doAluno(alunoId) Optional
+        +salvar(avaliacao) boolean
+        +excluirDoAluno(alunoId)
+    }
+    class RepositorioComRelacionamentos~T~
+    class AlunoRepositorioJdbc
+    class AvaliacoesFisicasJdbc
+    class AlunoDao
+    class AvaliacaoFisicaDao
+    class Dependencias {
+        <<record>>
+        +jdbc() Dependencias$
+    }
+
+    ApiServlet --> RoteadorApi
+    ApiServlet ..> Dependencias : obtém as dependências
+    RoteadorApi --> "*" RecursoApi
+    RecursoApi <|.. ControladorRest
+    RecursoApi <|.. AvaliacaoFisicaRecurso
+    RecursoApi <|.. RelacionamentoRecurso
+    RecursoApi <|.. AdicionaisMatriculaRecurso
+    ControladorRest --> "*" RecursoApi : sub-recursos
+    ControladorRest ..> Repositorio
+    ControladorRest ..> Validador
+    AvaliacaoFisicaRecurso ..> AvaliacoesFisicas
+    Repositorio <|.. RepositorioComRelacionamentos
+    RepositorioComRelacionamentos o--> Repositorio : decora
+    Repositorio <|.. AlunoRepositorioJdbc
+    AvaliacoesFisicas <|.. AvaliacoesFisicasJdbc
+    AlunoRepositorioJdbc --> AlunoDao : adapta
+    AvaliacoesFisicasJdbc --> AvaliacaoFisicaDao : adapta
+    Dependencias ..> RepositorioComRelacionamentos : monta
+    Dependencias ..> AlunoRepositorioJdbc : monta
+    Dependencias ..> AvaliacoesFisicasJdbc : monta
+```
+
+Os outros recursos (`Plano`, `Instrutor`, `Matricula`, `FichaTreino`) seguem o mesmo desenho do aluno:
+`*RepositorioJdbc` adaptando o `*Dao`.
+
+### Diagrama de classes: entidades, relacionamentos e lazy loading
+
+Cada entidade declara a interface `Relacionamentos` de que precisa, e o repositório entrega a
+implementação. Os relacionamentos ficam em `Lazy<T>`: a consulta só acontece no primeiro acesso ao getter.
+
+```mermaid
+classDiagram
+    direction LR
+    class Aluno {
+        -id int
+        -nome String
+        -cpf Cpf
+        -status StatusCadastro
+        +vincular(Relacionamentos)
+        +getMatriculas() List~Matricula~
+        +getFichas() List~FichaTreino~
+        +getAvaliacaoFisica() Optional~AvaliacaoFisica~
+    }
+    class Relacionamentos {
+        <<interface>>
+        +matriculasDoAluno(alunoId) List~Matricula~
+        +fichasDoAluno(alunoId) List~FichaTreino~
+        +avaliacaoDoAluno(alunoId) Optional~AvaliacaoFisica~
+    }
+    class RelacionamentosAluno
+    class Lazy~T~ {
+        -carregador Carregador~T~
+        -valor T
+        -carregado boolean
+        +de(Carregador~T~) Lazy~T~$
+        +pronto(T) Lazy~T~$
+        +obter() T
+    }
+    class Plano {
+        +vincular(Relacionamentos)
+        +getMatriculas() List~Matricula~
+    }
+    class Instrutor {
+        +vincular(Relacionamentos)
+        +getFichas() List~FichaTreino~
+    }
+    class Matricula
+    class FichaTreino {
+        +getExercicios() List~FichaExercicio~
+    }
+    class FichaExercicio
+    class AvaliacaoFisica {
+        -alunoId int
+        -pesoKg BigDecimal
+        -alturaM BigDecimal
+        +getImc() BigDecimal
+    }
+
+    Aluno "1" --> "0..*" Matricula : matriculas
+    Aluno "1" --> "0..*" FichaTreino : fichas
+    Aluno "1" --> "0..1" AvaliacaoFisica : avaliacaoFisica
+    Plano "1" --> "0..*" Matricula : matriculas
+    Instrutor "0..1" --> "0..*" FichaTreino : fichas
+    FichaTreino "1" *-- "0..*" FichaExercicio : exercicios
+    Aluno ..> Lazy : guarda os relacionamentos em
+    Aluno ..> Relacionamentos : consulta sob demanda
+    Relacionamentos <|.. RelacionamentosAluno
+```
+
+### Modelo de dados (relacionamentos no banco)
+
+```mermaid
+erDiagram
+    aluno ||--o{ matricula : "tem"
+    plano ||--o{ matricula : "é contratado em"
+    matricula ||--o{ mensalidade : "gera"
+    aluno ||--o{ ficha_treino : "tem"
+    instrutor |o--o{ ficha_treino : "monta"
+    ficha_treino ||--o{ ficha_exercicio : "contém"
+    aluno ||--o| avaliacao_fisica : "tem no máximo uma"
+
+    aluno {
+        int id PK
+        string cpf UK
+    }
+    avaliacao_fisica {
+        int id PK
+        int aluno_id FK, UK
+    }
+    matricula {
+        int id PK
+        int aluno_id FK
+        int plano_id FK
+    }
+    ficha_treino {
+        int id PK
+        int aluno_id FK
+        int instrutor_id FK
+    }
+```
+
+### Diagrama de sequência: valor da matrícula com adicionais (Decorator)
+
+`GET /api/matriculas/1/adicionais?codigos=BIOIMPEDANCIA,PRE_TREINO`
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Cliente
+    participant Servlet as ApiServlet
+    participant Roteador as RoteadorApi
+    participant Rest as ControladorRest
+    participant Recurso as AdicionaisMatriculaRecurso
+    participant Repo as Repositorio de matrículas
+    participant Catalogo as CatalogoAdicionais
+    participant Orcamento as OrcamentoAdicionais
+    participant Montador as MontadorAdicionais
+
+    Cliente->>Servlet: GET /api/matriculas/1/adicionais?codigos=...
+    Servlet->>Roteador: atender(requisicao)
+    Roteador->>Rest: tratar(requisicao)
+    Rest->>Recurso: tratar(requisicao) [sub-recurso "adicionais"]
+    Recurso->>Repo: buscar(1)
+    Repo-->>Recurso: matricula (Servico base)
+    loop cada código
+        Recurso->>Catalogo: porCodigo(codigo)
+        Catalogo-->>Recurso: ServicoAdicional
+    end
+    Recurso->>Orcamento: calcular(matricula, adicionais)
+    loop cada adicional
+        Orcamento->>Montador: decorar(servico, adicional)
+        Montador-->>Orcamento: new Bioimpedancia(servico) / new PreTreino(servico)
+    end
+    Orcamento->>Orcamento: servico.custo() e servico.getDescricao()
+    Orcamento-->>Recurso: orçamento
+    Recurso-->>Servlet: RespostaApi 200
+    Servlet-->>Cliente: 200 JSON com totalMensal
+```
+
+### Diagrama de sequência: criar um plano
+
+`POST /api/planos`
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Cliente
+    participant Servlet as ApiServlet
+    participant Roteador as RoteadorApi
+    participant Rest as ControladorRest de Plano
+    participant Corpo as CorpoJson
+    participant Validador as Validacoes.plano()
+    participant Repo as Repositorio de Plano
+    participant Dao as PlanoDao
+
+    Cliente->>Servlet: POST /api/planos {json}
+    Servlet->>Roteador: atender(requisicao)
+    Roteador->>Rest: tratar(requisicao)
+    Rest->>Corpo: ler(corpo, Plano.class)
+    Corpo->>Validador: validar(plano)
+    alt dados inválidos
+        Validador-->>Corpo: lista de erros
+        Corpo-->>Roteador: ErroApi 400
+        Roteador-->>Cliente: 400 {"error", "detalhes"}
+    else válido
+        Corpo-->>Rest: plano
+        Rest->>Repo: criar(plano)
+        Repo->>Dao: cadastrar(plano)
+        Dao-->>Rest: id
+        Rest->>Repo: buscar(id)
+        Repo-->>Rest: plano gravado
+        Rest-->>Cliente: 201 Created + Location /api/planos/{id}
+    end
+```
+
+### Diagrama de sequência: matrículas do aluno (lazy loading)
+
+`GET /api/alunos/2/matriculas`
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Cliente
+    participant Recurso as RelacionamentoRecurso de Aluno
+    participant Repo as RepositorioComRelacionamentos de Aluno
+    participant Jdbc as AlunoRepositorioJdbc
+    participant Aluno
+    participant Lazy as Lazy (matrículas)
+    participant Fonte as RelacionamentosAluno
+    participant Matriculas as Repositorio de Matricula
+
+    Cliente->>Recurso: GET /api/alunos/2/matriculas
+    Recurso->>Repo: buscar(2)
+    Repo->>Jdbc: buscar(2)
+    Jdbc-->>Repo: aluno (só a tabela aluno)
+    Repo->>Aluno: vincular(fonte)
+    Note over Aluno,Lazy: nenhuma consulta ainda
+    Repo-->>Recurso: aluno
+    Recurso->>Aluno: getMatriculas()
+    Aluno->>Lazy: obter()
+    Lazy->>Fonte: matriculasDoAluno(2) [1º acesso]
+    Fonte->>Matriculas: listar(alunoId=2)
+    Matriculas-->>Lazy: matrículas
+    Lazy-->>Aluno: matrículas (guardadas para os próximos acessos)
+    Aluno-->>Recurso: matrículas
+    Recurso-->>Cliente: 200 JSON
+```
+
+### Diagrama de sequência: salvar pela tela (Command + Factory)
+
+`POST /aluno?acao=salvar`
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario as Usuário
+    participant Controller as AlunoController (ControladorAcoes)
+    participant Fabrica as FabricaAcoes
+    participant Acao as aluno.SalvarAction (ICommand)
+    participant Repo as Repositorio de Aluno
+
+    Usuario->>Controller: POST /aluno?acao=salvar
+    Controller->>Fabrica: criar("aluno", "salvar", dependencias)
+    Fabrica-->>Controller: new SalvarAction(dependencias)
+    Controller->>Acao: executar(request, response)
+    Acao->>Acao: Aluno.getBuilder()...constroi()
+    alt id vazio
+        Acao->>Repo: criar(aluno)
+    else edição
+        Acao->>Repo: atualizar(aluno)
+    end
+    Acao-->>Usuario: redireciona para /aluno?acao=editar&id=...
+```
+
 ## Princípios aplicados
 
 ### SOLID
