@@ -233,6 +233,14 @@ class ControladorRestTest {
     }
 
     @Test
+    @DisplayName("Filtro numérico inválido na query string retorna 400, não 500")
+    void filtroNumericoInvalido() {
+        planos.falhaAoExcluir = new NumberFormatException("For input string: \"abc\"");
+
+        assertEquals(400, chamar("DELETE", "/planos/1").status());
+    }
+
+    @Test
     @DisplayName("Método não suportado na coleção retorna 405 com Allow")
     void metodoNaoPermitidoNaColecao() {
         RespostaApi resposta = chamar("DELETE", "/planos");

@@ -112,30 +112,39 @@ public class FichaTreinoDao {
         }
     }
 
-    public List<FichaTreino> consultarTodos(String objetivo) throws ClassNotFoundException, SQLException {
+    /** alunoId/instrutorId = 0: sem filtro. */
+    public List<FichaTreino> consultarTodos(String objetivo, int alunoId, int instrutorId) throws ClassNotFoundException, SQLException {
         try (Connection con = getConexao()) {
             String sql = """
-                SELECT f.id, a.nome AS aluno, f.objetivo,
+                SELECT f.id, f.aluno_id, f.instrutor_id, a.nome AS aluno, f.objetivo,
                        COALESCE(i.nome, '— não vinculado') AS instrutor,
                        COUNT(e.id) AS qtd_exercicios, f.data_criacao
                 FROM ficha_treino f
                 JOIN aluno a          ON a.id = f.aluno_id
                 LEFT JOIN instrutor i ON i.id = f.instrutor_id
                 LEFT JOIN ficha_exercicio e ON e.ficha_id = f.id
-                CROSS JOIN (SELECT ? AS objetivo) AS prm
+                CROSS JOIN (SELECT ? AS objetivo, ? AS aluno_id, ? AS instrutor_id) AS prm
                 WHERE (prm.objetivo = '' OR f.objetivo = prm.objetivo)
-                GROUP BY f.id, a.nome, f.objetivo, i.nome, f.data_criacao
+                  AND (prm.aluno_id = 0 OR f.aluno_id = prm.aluno_id)
+                  AND (prm.instrutor_id = 0 OR f.instrutor_id = prm.instrutor_id)
+                GROUP BY f.id, f.aluno_id, f.instrutor_id, a.nome, f.objetivo, i.nome, f.data_criacao
                 ORDER BY f.data_criacao DESC
             """;
             PreparedStatement comando = con.prepareStatement(sql);
             comando.setString(1, objetivo == null ? "" : objetivo);
+            comando.setInt(2, alunoId);
+            comando.setInt(3, instrutorId);
             ResultSet rs = comando.executeQuery();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             List<FichaTreino> fichas = new ArrayList<>();
 
             while(rs.next()){
+                Integer responsavel = rs.getInt("instrutor_id");
+                if (rs.wasNull()) responsavel = null;
                 FichaTreino f = FichaTreino.getBuilder()
                     .comId(rs.getInt("id"))
+                    .comAlunoId(rs.getInt("aluno_id"))
+                    .comInstrutorId(responsavel)
                     .comAluno(rs.getString("aluno"))
                     .comObjetivo(rs.getString("objetivo"))
                     .comInstrutor(rs.getString("instrutor"))

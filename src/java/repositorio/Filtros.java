@@ -25,4 +25,10 @@ public final class Filtros {
         String valor = filtros.get(chave);
         return valor == null ? "" : valor;
     }
+
+    /** 0 quando ausente (sem filtro); texto não numérico lança NumberFormatException (400 na API). */
+    public static int inteiro(Map<String, String> filtros, String chave) {
+        String valor = valor(filtros, chave).trim();
+        return valor.isEmpty() ? 0 : Integer.parseInt(valor);
+    }
 }

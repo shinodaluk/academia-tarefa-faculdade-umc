@@ -132,10 +132,11 @@ public class MatriculaDao {
         }
     }
 
-    public List<Matricula> consultarTodos(String situacao) throws ClassNotFoundException, SQLException {
+    /** alunoId/planoId = 0: sem filtro. */
+    public List<Matricula> consultarTodos(String situacao, int alunoId, int planoId) throws ClassNotFoundException, SQLException {
         try (Connection con = getConexao()) {
             String sql = """
-                SELECT m.id, a.nome AS aluno, p.nome AS plano, m.data_inicio, p.valor_mensal,
+                SELECT m.id, m.aluno_id, m.plano_id, a.nome AS aluno, p.nome AS plano, m.data_inicio, p.valor_mensal,
                        m.fidelidade_meses, m.desconto_estudante, m.dia_vencimento, m.situacao,
                        COALESCE((SELECT DATEDIFF(CURDATE(), MIN(me.data_vencimento)) FROM mensalidade me
                                   WHERE me.matricula_id = m.id AND me.data_pagamento IS NULL
@@ -143,12 +144,16 @@ public class MatriculaDao {
                 FROM matricula m
                 JOIN aluno a ON a.id = m.aluno_id
                 JOIN plano p ON p.id = m.plano_id
-                CROSS JOIN (SELECT ? AS situacao) AS prm
+                CROSS JOIN (SELECT ? AS situacao, ? AS aluno_id, ? AS plano_id) AS prm
                 WHERE (prm.situacao = '' OR m.situacao = prm.situacao)
+                  AND (prm.aluno_id = 0 OR m.aluno_id = prm.aluno_id)
+                  AND (prm.plano_id = 0 OR m.plano_id = prm.plano_id)
                 ORDER BY a.nome
             """;
             PreparedStatement comando = con.prepareStatement(sql);
             comando.setString(1, situacao == null ? "" : situacao);
+            comando.setInt(2, alunoId);
+            comando.setInt(3, planoId);
             ResultSet rs = comando.executeQuery();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             List<Matricula> matriculas = new ArrayList<>();
@@ -158,6 +163,8 @@ public class MatriculaDao {
                         rs.getInt("fidelidade_meses"), rs.getBoolean("desconto_estudante"));
                 Matricula m = Matricula.getBuilder()
                     .comId(rs.getInt("id"))
+                    .comAlunoId(rs.getInt("aluno_id"))
+                    .comPlanoId(rs.getInt("plano_id"))
                     .comAluno(rs.getString("aluno"))
                     .comPlano(rs.getString("plano"))
                     .comDescricao(rs.getString("plano"))

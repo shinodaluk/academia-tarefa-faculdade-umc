@@ -28,6 +28,8 @@ public class RoteadorApi {
             return ex.comoResposta();
         } catch (RegistroNaoEncontradoException ex) {
             return RespostaApi.erro(404, ex.getMessage());
+        } catch (NumberFormatException ex) {
+            return RespostaApi.erro(400, "Parâmetro numérico inválido.");
         } catch (SQLIntegrityConstraintViolationException ex) {
             return RespostaApi.erro(409,
                     "A operação viola a integridade dos dados (registro duplicado, inexistente ou com vínculos).");

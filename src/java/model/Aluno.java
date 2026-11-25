@@ -13,6 +13,8 @@ import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -32,9 +34,37 @@ public class Aluno {
     private Date atualizado_em;
     
     private String planoAtual;
-    
+
+    // transient: fora do JSON, então serializar o aluno não dispara consulta
+    private transient Lazy<List<Matricula>> matriculas = Lazy.pronto(List.of());
+    private transient Lazy<List<FichaTreino>> fichas = Lazy.pronto(List.of());
+    private transient Lazy<Optional<AvaliacaoFisica>> avaliacaoFisica = Lazy.pronto(Optional.empty());
+
+    /** De onde vêm os relacionamentos do aluno; o repositório fornece a implementação. */
+    public interface Relacionamentos {
+        List<Matricula> matriculasDoAluno(int alunoId) throws Exception;
+
+        List<FichaTreino> fichasDoAluno(int alunoId) throws Exception;
+
+        Optional<AvaliacaoFisica> avaliacaoDoAluno(int alunoId) throws Exception;
+    }
+
     public Aluno(){
     }
+
+    /** Liga os relacionamentos à fonte sem consultar nada: cada um carrega no 1º acesso. */
+    public void vincular(Relacionamentos fonte) {
+        matriculas = Lazy.de(() -> fonte.matriculasDoAluno(id));
+        fichas = Lazy.de(() -> fonte.fichasDoAluno(id));
+        avaliacaoFisica = Lazy.de(() -> fonte.avaliacaoDoAluno(id));
+    }
+
+    /** 1:n */
+    public List<Matricula> getMatriculas() { return matriculas.obter(); }
+    /** 1:n */
+    public List<FichaTreino> getFichas() { return fichas.obter(); }
+    /** 1:1 */
+    public Optional<AvaliacaoFisica> getAvaliacaoFisica() { return avaliacaoFisica.obter(); }
     
     public int getId() { return id; }
     public String getNome() { return nome; }

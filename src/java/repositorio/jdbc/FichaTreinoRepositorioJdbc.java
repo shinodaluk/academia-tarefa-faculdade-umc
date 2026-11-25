@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import model.FichaTreino;
 
-/** Adapta o FichaTreinoDao à interface Repositorio (API e telas). Filtros: ?objetivo= */
+/** Adapta o FichaTreinoDao à interface Repositorio (API e telas). Filtros: ?objetivo=&alunoId=&instrutorId= */
 public class FichaTreinoRepositorioJdbc implements Repositorio<FichaTreino> {
 
     private final FichaTreinoDao dao;
@@ -18,7 +18,8 @@ public class FichaTreinoRepositorioJdbc implements Repositorio<FichaTreino> {
 
     @Override
     public List<FichaTreino> listar(Map<String, String> filtros) throws Exception {
-        return dao.consultarTodos(Filtros.valor(filtros, "objetivo"));
+        return dao.consultarTodos(Filtros.valor(filtros, "objetivo"),
+                Filtros.inteiro(filtros, "alunoId"), Filtros.inteiro(filtros, "instrutorId"));
     }
 
     @Override

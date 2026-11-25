@@ -5,6 +5,7 @@
 package model;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  *
@@ -22,8 +23,23 @@ public class Instrutor {
 
     private int fichasVinculadas;
 
+    private transient Lazy<List<FichaTreino>> fichas = Lazy.pronto(List.of());
+
+    @FunctionalInterface
+    public interface Relacionamentos {
+        List<FichaTreino> fichasDoInstrutor(int instrutorId) throws Exception;
+    }
+
     public Instrutor() {
     }
+
+    /** Liga as fichas à fonte; a consulta só acontece no 1º getFichas(). */
+    public void vincular(Relacionamentos fonte) {
+        fichas = Lazy.de(() -> fonte.fichasDoInstrutor(id));
+    }
+
+    /** 1:n */
+    public List<FichaTreino> getFichas() { return fichas.obter(); }
 
     public int getId() { return id; }
     public String getNome() { return nome; }

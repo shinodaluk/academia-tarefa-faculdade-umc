@@ -5,6 +5,7 @@
 package model;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  *
@@ -21,8 +22,23 @@ public class Plano {
 
     private int matriculasVinculadas;
 
+    private transient Lazy<List<Matricula>> matriculas = Lazy.pronto(List.of());
+
+    @FunctionalInterface
+    public interface Relacionamentos {
+        List<Matricula> matriculasDoPlano(int planoId) throws Exception;
+    }
+
     public Plano() {
     }
+
+    /** Liga as matrículas à fonte; a consulta só acontece no 1º getMatriculas(). */
+    public void vincular(Relacionamentos fonte) {
+        matriculas = Lazy.de(() -> fonte.matriculasDoPlano(id));
+    }
+
+    /** 1:n */
+    public List<Matricula> getMatriculas() { return matriculas.obter(); }
 
     public int getId() { return id; }
     public String getNome() { return nome; }
