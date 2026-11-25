@@ -27,7 +27,7 @@ public class Aluno {
     private Date data_nascimento;
     private String telefone; 
     private String email;
-    private String status;
+    private StatusCadastro status;
     private Date criado_em;
     private Date atualizado_em;
     
@@ -42,7 +42,7 @@ public class Aluno {
     public Date getDataNascimento() { return data_nascimento; }
     public String getTelefone() { return telefone; }
     public String getEmail() { return email; }
-    public String getStatus() { return status; }
+    public StatusCadastro getStatus() { return status; }
     public Date getCriadoEm() { return criado_em; }
     public Date getAtualizadoEm() { return atualizado_em; }
     public String getPlanoAtual() { return planoAtual; }
@@ -86,17 +86,17 @@ public class Aluno {
         }
 
         public AlunoBuilder comStatus(String status){
-            aluno.status = status;
+            aluno.status = Rotulos.de(StatusCadastro.class, status);
             return this;
         }
 
         public AlunoBuilder doStatusAtivo(){
-            aluno.status = "Ativo";
+            aluno.status = StatusCadastro.ATIVO;
             return this;
         }
 
         public AlunoBuilder doStatusInativo(){
-            aluno.status = "Inativo";
+            aluno.status = StatusCadastro.INATIVO;
             return this;
         }
 

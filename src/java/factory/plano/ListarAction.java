@@ -1,37 +1,30 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.plano;
 
-import model.Plano;
-import dao.PlanoDao;
+import com.google.gson.Gson;
+import config.Dependencias;
 import factory.ICommand;
-import java.sql.SQLException;
-import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.google.gson.Gson;
-import util.TextoSeguro;
+import model.Plano;
+import repositorio.Filtros;
+import repositorio.Repositorio;
 import util.Mensagens;
+import util.TextoSeguro;
 
-/**
- *
- * @author Shino
- */
 public class ListarAction implements ICommand {
+
+    private final Repositorio<Plano> planos;
+
+    public ListarAction(Dependencias dependencias) {
+        this.planos = dependencias.planos();
+    }
 
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        PlanoDao planoDao = new PlanoDao();
-        Gson gson = new Gson();
-        boolean somenteAtivos = "1".equals(request.getParameter("somenteAtivos"));
         request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("aviso")));
-
         try {
-            List<Plano> listaPlano = planoDao.consultarTodos(somenteAtivos);
-            request.setAttribute("planosJson", gson.toJson(listaPlano));
-        } catch (ClassNotFoundException | SQLException ex) {
+            request.setAttribute("planosJson", new Gson().toJson(planos.listar(Filtros.de("apenasAtivos", String.valueOf("1".equals(request.getParameter("somenteAtivos")))))));
+        } catch (Exception ex) {
             request.setAttribute("planosJson", "[]");
             request.setAttribute("aviso", TextoSeguro.paraScript(Mensagens.paraUsuario(ex)));
         }

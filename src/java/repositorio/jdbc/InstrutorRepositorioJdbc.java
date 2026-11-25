@@ -1,12 +1,13 @@
-package api.repositorio;
+package repositorio.jdbc;
 
-import api.Repositorio;
+import repositorio.Filtros;
+import repositorio.Repositorio;
 import dao.InstrutorDao;
 import java.util.List;
 import java.util.Map;
 import model.Instrutor;
 
-/** Adapta o InstrutorDao à interface usada pela API. Filtros: ?especialidade=&status= */
+/** Adapta o InstrutorDao à interface Repositorio (API e telas). Filtros: ?especialidade=&status= */
 public class InstrutorRepositorioJdbc implements Repositorio<Instrutor> {
 
     private final InstrutorDao dao;
@@ -17,7 +18,7 @@ public class InstrutorRepositorioJdbc implements Repositorio<Instrutor> {
 
     @Override
     public List<Instrutor> listar(Map<String, String> filtros) throws Exception {
-        return dao.consultarTodos(filtros.getOrDefault("especialidade", ""), filtros.getOrDefault("status", ""));
+        return dao.consultarTodos(Filtros.valor(filtros, "especialidade"), Filtros.valor(filtros, "status"));
     }
 
     @Override

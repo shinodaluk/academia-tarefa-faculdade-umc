@@ -27,10 +27,10 @@ public class InstrutorDao {
             PreparedStatement comando = con.prepareStatement("INSERT INTO instrutor (nome, cref, especialidade, telefone, email, status) VALUES (?, ?, ?, ?, ?, ?)", java.sql.Statement.RETURN_GENERATED_KEYS);
             comando.setString(1, instrutor.getNome());
             comando.setString(2, instrutor.getCref());
-            comando.setString(3, instrutor.getEspecialidade());
+            comando.setString(3, instrutor.getEspecialidade().rotulo());
             comando.setString(4, instrutor.getTelefone());
             comando.setString(5, instrutor.getEmail());
-            comando.setString(6, instrutor.getStatus());
+            comando.setString(6, instrutor.getStatus().rotulo());
             comando.executeUpdate();
 
             ResultSet rs = comando.getGeneratedKeys();
@@ -62,10 +62,10 @@ public class InstrutorDao {
             PreparedStatement comando = con.prepareStatement("UPDATE instrutor SET nome = ?, cref = ?, especialidade = ?, telefone = ?, email = ?, status = ? WHERE id = ?");
             comando.setString(1, instrutor.getNome());
             comando.setString(2, instrutor.getCref());
-            comando.setString(3, instrutor.getEspecialidade());
+            comando.setString(3, instrutor.getEspecialidade().rotulo());
             comando.setString(4, instrutor.getTelefone());
             comando.setString(5, instrutor.getEmail());
-            comando.setString(6, instrutor.getStatus());
+            comando.setString(6, instrutor.getStatus().rotulo());
             comando.setInt(7, instrutor.getId());
             comando.execute();
         }

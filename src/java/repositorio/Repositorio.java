@@ -1,9 +1,9 @@
-package api;
+package repositorio;
 
 import java.util.List;
 import java.util.Map;
 
-/** Persistência que a API usa; a implementação JDBC fica nos adaptadores. */
+/** Persistência usada pela API e pelas telas; a implementação JDBC fica em repositorio.jdbc. */
 public interface Repositorio<T> {
 
     List<T> listar(Map<String, String> filtros) throws Exception;

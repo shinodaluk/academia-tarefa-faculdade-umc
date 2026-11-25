@@ -1,27 +1,26 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.plano;
 
-import model.Dinheiro;
-import model.Plano;
-import dao.PlanoDao;
+import config.Dependencias;
 import factory.ICommand;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import model.Dinheiro;
+import model.Plano;
+import repositorio.Repositorio;
 import util.Mensagens;
 
-/**
- *
- * @author Shino
- */
 public class SalvarAction implements ICommand {
+
+    private final Repositorio<Plano> planos;
+
+    public SalvarAction(Dependencias dependencias) {
+        this.planos = dependencias.planos();
+    }
+
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        PlanoDao planoDao = new PlanoDao();
         String id = request.getParameter("id");
         boolean novo = id == null || id.isEmpty();
 
@@ -34,18 +33,18 @@ public class SalvarAction implements ICommand {
                     // checkbox desmarcado não é enviado no POST
                     .comAtivo(request.getParameter("ativo") != null);
 
-            if(novo) {
-                int newId = planoDao.cadastrar(builder.constroi());
-                id = String.valueOf(newId);
+            if (novo) {
+                id = String.valueOf(planos.criar(builder.constroi()));
             } else {
-                planoDao.atualizar(builder.comId(Integer.parseInt(id)).constroi());
+                planos.atualizar(builder.comId(Integer.parseInt(id)).constroi());
             }
 
             request.setAttribute("redirect", request.getContextPath() + "/plano?acao=editar&id=" + id);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         } catch (Exception ex) {
+            // volta para a mesma tela (criar ou editar), sem perder o contexto da edição
             String erro = URLEncoder.encode(Mensagens.paraUsuario(ex), StandardCharsets.UTF_8);
-            String volta = novo ? "acao=criar" : "acao=editar&id=" + id;
+            String volta = novo ? "acao=criar" : "acao=editar&id=" + URLEncoder.encode(id, StandardCharsets.UTF_8);
             request.setAttribute("redirect", request.getContextPath() + "/plano?" + volta + "&erro=" + erro);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         }

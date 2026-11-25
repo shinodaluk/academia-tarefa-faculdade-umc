@@ -1,5 +1,6 @@
 package api;
 
+import repositorio.Repositorio;
 import dao.RegistroNaoEncontradoException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

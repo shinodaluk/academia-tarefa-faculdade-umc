@@ -1,12 +1,13 @@
-package api.repositorio;
+package repositorio.jdbc;
 
-import api.Repositorio;
+import repositorio.Filtros;
+import repositorio.Repositorio;
 import dao.MatriculaDao;
 import java.util.List;
 import java.util.Map;
 import model.Matricula;
 
-/** Adapta o MatriculaDao à interface usada pela API. Filtros: ?situacao= */
+/** Adapta o MatriculaDao à interface Repositorio (API e telas). Filtros: ?situacao= */
 public class MatriculaRepositorioJdbc implements Repositorio<Matricula> {
 
     private final MatriculaDao dao;
@@ -17,7 +18,7 @@ public class MatriculaRepositorioJdbc implements Repositorio<Matricula> {
 
     @Override
     public List<Matricula> listar(Map<String, String> filtros) throws Exception {
-        return dao.consultarTodos(filtros.getOrDefault("situacao", ""));
+        return dao.consultarTodos(Filtros.valor(filtros, "situacao"));
     }
 
     @Override

@@ -1,10 +1,12 @@
 package factory;
 
+import config.Dependencias;
 import java.util.regex.Pattern;
 
 /**
  * Factory das ações das telas: "plano" + "listar" vira factory.plano.ListarAction.
  * Ação nova = classe nova no pacote, sem alterar a fábrica nem o controller.
+ * A ação recebe as dependências pelo construtor; ações sem dependência usam o construtor vazio.
  */
 public final class FabricaAcoes {
 
@@ -14,7 +16,8 @@ public final class FabricaAcoes {
     private FabricaAcoes() {
     }
 
-    public static ICommand criar(String recurso, String acao) throws AcaoNaoEncontradaException {
+    public static ICommand criar(String recurso, String acao, Dependencias dependencias)
+            throws AcaoNaoEncontradaException {
         if (acao == null || !NOME_VALIDO.matcher(acao).matches()) {
             throw new AcaoNaoEncontradaException("Ação inválida.");
         }
@@ -25,9 +28,17 @@ public final class FabricaAcoes {
             if (!ICommand.class.isAssignableFrom(classe)) {
                 throw new AcaoNaoEncontradaException("Ação não encontrada: " + acao);
             }
-            return (ICommand) classe.getDeclaredConstructor().newInstance();
+            return (ICommand) instanciar(classe, dependencias);
         } catch (ReflectiveOperationException ex) {
             throw new AcaoNaoEncontradaException("Ação não encontrada: " + acao);
+        }
+    }
+
+    private static Object instanciar(Class<?> classe, Dependencias dependencias) throws ReflectiveOperationException {
+        try {
+            return classe.getConstructor(Dependencias.class).newInstance(dependencias);
+        } catch (NoSuchMethodException semDependencias) {
+            return classe.getDeclaredConstructor().newInstance();
         }
     }
 }

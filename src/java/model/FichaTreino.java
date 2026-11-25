@@ -17,7 +17,7 @@ public class FichaTreino {
     private int id;
     private int alunoId;
     private Integer instrutorId; // coluna aceita NULL: instrutor excluído deixa a ficha sem responsável
-    private String objetivo;
+    private ObjetivoTreino objetivo;
     @JsonAdapter(Aluno.DataIsoAdapter.class)
     private Date dataCriacao;
     private String observacoes;
@@ -33,7 +33,7 @@ public class FichaTreino {
     public int getId() { return id; }
     public int getAlunoId() { return alunoId; }
     public Integer getInstrutorId() { return instrutorId; }
-    public String getObjetivo() { return objetivo; }
+    public ObjetivoTreino getObjetivo() { return objetivo; }
     public Date getDataCriacao() { return dataCriacao; }
     public String getObservacoes() { return observacoes; }
     public String getAluno() { return aluno; }
@@ -65,22 +65,22 @@ public class FichaTreino {
         }
 
         public FichaTreinoBuilder comObjetivo(String objetivo){
-            ficha.objetivo = objetivo;
+            ficha.objetivo = Rotulos.de(ObjetivoTreino.class, objetivo);
             return this;
         }
 
         public FichaTreinoBuilder doObjetivoHipertrofia(){
-            ficha.objetivo = "Hipertrofia";
+            ficha.objetivo = ObjetivoTreino.HIPERTROFIA;
             return this;
         }
 
         public FichaTreinoBuilder doObjetivoEmagrecimento(){
-            ficha.objetivo = "Emagrecimento";
+            ficha.objetivo = ObjetivoTreino.EMAGRECIMENTO;
             return this;
         }
 
         public FichaTreinoBuilder doObjetivoCondicionamento(){
-            ficha.objetivo = "Condicionamento";
+            ficha.objetivo = ObjetivoTreino.CONDICIONAMENTO;
             return this;
         }
 

@@ -33,11 +33,13 @@ Projeto acadêmico desenvolvido em Java (Servlet + JSP), sem framework de aplica
 ```
 src/java/
 ├── api/          API REST (/api/*): servlet, roteador, controlador genérico, validações
-│   └── repositorio/  Adaptadores dos DAOs para a interface Repositorio
+├── config/       Dependencias: único ponto que monta as implementações JDBC
+├── repositorio/  Interfaces de persistência (Repositorio, CatalogoAdicionais, ...) e Filtros
+│   └── jdbc/         Adaptadores dos DAOs para essas interfaces
 ├── controller/   Servlets das telas, todos sobre a base ControladorAcoes
 ├── factory/      Ações das telas (Command) e a FabricaAcoes que as cria
 ├── dao/          Acesso ao banco com JDBC e PreparedStatement
-├── model/        Entidades (com Builder), decorators, objetos de valor (Dinheiro, Cpf)
+├── model/        Entidades (com Builder), decorators, objetos de valor (Dinheiro, Cpf) e enums
 ├── util/         Conexão com o banco, filtro de encoding, texto seguro e mensagens de erro
 └── docs/
     ├── database/          Scripts SQL
@@ -85,13 +87,15 @@ e o `model.OrcamentoAdicionais` aplica a cadeia e monta o resultado usado pela t
 - **Factory** — `factory.FabricaAcoes` cria a ação a partir do recurso e do parâmetro `acao`
   (`plano` + `listar` → `factory.plano.ListarAction`). Aceita só letras e só classes que implementam `ICommand`.
 - **DAO** — uma classe de acesso a dados por entidade, isolando o SQL.
-- **Adapter** — `api.repositorio.*RepositorioJdbc` adaptam cada DAO à interface `api.Repositorio<T>`.
+- **Adapter** — `repositorio.jdbc.*Jdbc` adaptam cada DAO às interfaces de `repositorio`.
 - **Front Controller** — `api.ApiServlet` recebe todo `/api/*` e o `api.RoteadorApi` escolhe o recurso.
 - **Strategy** — cada recurso recebe seu `api.Validador<T>`; o `ControladorRest<T>` é o mesmo para todos.
 
-A API depende só das interfaces `Repositorio<T>` e `Validador<T>` (inversão de dependência). As
-implementações são montadas em um único ponto, `ApiServlet.init()`, e nos testes são trocadas por fakes
-em memória.
+API e telas dependem só de interfaces (`Repositorio<T>`, `CatalogoAdicionais`, `IndicadoresAlunos`,
+`Validador<T>`). As implementações JDBC são montadas em um único ponto, `config.Dependencias.jdbc()`
+(composition root), e entregues pelo construtor: o `ApiServlet` passa para os controladores REST, e o
+`ControladorAcoes` passa, via `FabricaAcoes`, para cada Action das telas. Nos testes, as mesmas classes
+recebem versões em memória.
 
 ## Princípios aplicados
 
@@ -100,25 +104,23 @@ em memória.
 | Princípio | Onde |
 | --- | --- |
 | **S** — responsabilidade única | `ApiServlet` só traduz HTTP; `RoteadorApi` só escolhe o recurso e converte erros; `ControladorRest` só aplica o CRUD; `Validacoes` só valida; DAOs só acessam o banco |
-| **O** — aberto/fechado | Adicional novo = subclasse de `AdicionaisMatricula` + uma entrada no mapa do `MontadorAdicionais`. Ação de tela nova = classe nova no pacote, sem mexer na `FabricaAcoes`. Recurso REST novo = uma linha em `ApiServlet.init()` |
+| **O** — aberto/fechado | Adicional novo = subclasse de `AdicionaisMatricula` + uma entrada no mapa do `MontadorAdicionais`. Ação de tela nova = classe nova no pacote, sem mexer na `FabricaAcoes`. Recurso REST novo = uma linha em `ApiServlet.init()`. Valor novo de status/situação = uma constante no enum |
 | **L** — substituição de Liskov | Qualquer `Servico` (a `Matricula` ou um decorator) pode ser decorado de novo; qualquer `Repositorio<T>` (JDBC ou fake) serve ao `ControladorRest` |
-| **I** — segregação de interfaces | `Servico` tem 2 métodos; `AdicionaisMatriculaRecurso` depende de duas interfaces de 1 método (`FonteMatriculas`, `FonteAdicionais`) em vez do `Repositorio` inteiro |
-| **D** — inversão de dependência | API e decorators recebem as dependências pelo construtor; nenhum decorator acessa o banco |
-
-Limitação conhecida: as ações das telas (`factory/*Action`) ainda criam os DAOs com `new`, como no
-projeto original. A inversão de dependência completa foi feita na API.
+| **I** — segregação de interfaces | `Servico` tem 2 métodos; `IndicadoresAlunos` tem 1; `AdicionaisMatriculaRecurso` depende de duas interfaces de 1 método (`FonteMatriculas`, `FonteAdicionais`) em vez do `Repositorio` inteiro; cada Action recebe só os repositórios que usa |
+| **D** — inversão de dependência | Nenhuma Action, controlador REST ou decorator cria DAO ou acessa o banco: todos recebem interfaces pelo construtor, montadas só em `config.Dependencias` |
 
 ### Calistenia de Objetos
 
 - **Encapsular primitivos** — `model.Dinheiro` (nunca negativo, centavos exatos com `BigDecimal`) e
-  `model.Cpf` (11 dígitos, guardado com máscara) substituem `double` e `String`.
+  `model.Cpf` (11 dígitos, guardado com máscara) substituem `double` e `String`. Status, situação,
+  objetivo e especialidade são enums (`StatusCadastro`, `SituacaoMatricula`, `ObjetivoTreino`,
+  `Especialidade`): valor fora da lista é recusado na conversão, não chega ao banco.
 - **Sem abreviações** — nomes completos (`plano`, `matricula`, `alunos` no lugar de `pla`, `mat`, `lAluno`).
 - **Sem `else` nas classes novas** — validações e controladores usam retorno antecipado.
 - **Classes pequenas** — cada classe da API tem uma responsabilidade e poucas dezenas de linhas.
 - **Imutabilidade** — `Dinheiro`, `Cpf`, decorators, `RequisicaoApi`, `RespostaApi` e `OrcamentoAdicionais` são imutáveis.
 
-Limitação conhecida: as entidades mantêm getters (Gson e as JSPs dependem deles) e alguns campos ainda
-são `String` (`status`, `situacao`, `objetivo`).
+Limitação conhecida: as entidades mantêm getters, porque o Gson e as JSPs dependem deles.
 
 ## Como executar
 
@@ -167,7 +169,9 @@ A conexão usa estas variáveis de ambiente; sem elas, valem os padrões de dese
 
 ## Testes
 
-Testes unitários em `test/`, com JUnit 5. Não dependem de banco nem de servidor.
+Testes unitários em `test/`, com JUnit 5. Não dependem de banco nem de servidor: as Actions das telas
+recebem request/response falsos (`test/apoio/HttpFalso`, via `java.lang.reflect.Proxy`) e repositórios em
+memória (`test/apoio/RepositorioFalso`), sem biblioteca de mock.
 
 | Classe | O que cobre |
 | --- | --- |
@@ -181,6 +185,8 @@ Testes unitários em `test/`, com JUnit 5. Não dependem de banco nem de servido
 | `model.AlunoJsonTest` | Contrato JSON do aluno com as telas e a API (`dataNascimento`, `cpf`) |
 | `dao.MatriculaDaoTest` | Regra de preço: descontos de fidelidade e de estudante, arredondamento |
 | `factory.FabricaAcoesTest` | Criação das ações e rejeição de nomes inválidos ou classes que não são `ICommand` |
+| `factory.AcoesTelasTest` | Actions das telas com dependências em memória: listagem, filtros, salvar (novo/edição/conflito), excluir, indicadores, ficha com exercícios, adicionais |
+| `model.RotulosTest` | Enums ↔ texto do banco/tela/JSON (com acento), rejeição de valor desconhecido |
 | `controller.ControladorAcoesTest` | Ações que gravam exigem POST |
 | `util.TextoSeguroTest` | Texto da URL não consegue fechar a tag `<script>` (proteção contra XSS) |
 | `util.MensagensTest` | Mensagens para a tela sem SQL nem detalhes internos |

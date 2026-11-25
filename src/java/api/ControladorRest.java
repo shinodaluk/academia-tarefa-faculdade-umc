@@ -1,5 +1,6 @@
 package api;
 
+import repositorio.Repositorio;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

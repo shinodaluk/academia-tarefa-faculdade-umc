@@ -43,14 +43,14 @@ class ValidacoesTest {
     }
 
     @Test
-    @DisplayName("Aluno sem CPF, sem data de nascimento e com status desconhecido é inválido")
+    @DisplayName("Aluno sem CPF, sem data de nascimento e sem status é inválido")
     void alunoInvalido() {
-        Aluno aluno = Aluno.getBuilder().comNome("Ana").comStatus("Talvez").constroi();
+        Aluno aluno = Aluno.getBuilder().comNome("Ana").constroi();
 
         assertEquals(List.of(
                 "cpf é obrigatório",
                 "dataNascimento é obrigatório (formato yyyy-MM-dd)",
-                "status deve ser um de [Ativo, Inativo]"), Validacoes.aluno().validar(aluno));
+                "status é obrigatório"), Validacoes.aluno().validar(aluno));
     }
 
     @Test
@@ -63,12 +63,12 @@ class ValidacoesTest {
     }
 
     @Test
-    @DisplayName("Instrutor com especialidade fora da lista é inválido")
-    void instrutorEspecialidadeInvalida() {
+    @DisplayName("Instrutor sem especialidade é inválido")
+    void instrutorSemEspecialidade() {
         Instrutor instrutor = Instrutor.getBuilder().comNome("Bia").comCref("123456-G/SP")
-                .comEspecialidade("Natação").comStatus("Ativo").constroi();
+                .comStatus("Ativo").constroi();
 
-        assertEquals(1, Validacoes.instrutor().validar(instrutor).size());
+        assertEquals(List.of("especialidade é obrigatório"), Validacoes.instrutor().validar(instrutor));
     }
 
     @Test

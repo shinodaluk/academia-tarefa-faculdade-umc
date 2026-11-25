@@ -1,12 +1,12 @@
-package api.repositorio;
+package repositorio.jdbc;
 
-import api.Repositorio;
+import repositorio.Repositorio;
 import dao.PlanoDao;
 import java.util.List;
 import java.util.Map;
 import model.Plano;
 
-/** Adapta o PlanoDao à interface usada pela API. Filtros: ?apenasAtivos=true */
+/** Adapta o PlanoDao à interface Repositorio (API e telas). Filtros: ?apenasAtivos=true */
 public class PlanoRepositorioJdbc implements Repositorio<Plano> {
 
     private final PlanoDao dao;

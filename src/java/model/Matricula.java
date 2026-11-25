@@ -20,7 +20,7 @@ public class Matricula implements Servico {
     private int fidelidadeMeses;
     private boolean descontoEstudante;
     private int diaVencimento;
-    private String situacao;
+    private SituacaoMatricula situacao;
     private Date criado_em;
 
     private String aluno;
@@ -42,7 +42,7 @@ public class Matricula implements Servico {
     public int getFidelidadeMeses() { return fidelidadeMeses; }
     public boolean isDescontoEstudante() { return descontoEstudante; }
     public int getDiaVencimento() { return diaVencimento; }
-    public String getSituacao() { return situacao; }
+    public SituacaoMatricula getSituacao() { return situacao; }
     public Date getCriadoEm() { return criado_em; }
     public String getAluno() { return aluno; }
     public String getPlano() { return plano; }
@@ -114,22 +114,22 @@ public class Matricula implements Servico {
         }
 
         public MatriculaBuilder comSituacao(String situacao){
-            matricula.situacao = situacao;
+            matricula.situacao = Rotulos.de(SituacaoMatricula.class, situacao);
             return this;
         }
 
         public MatriculaBuilder doSituacaoAtiva(){
-            matricula.situacao = "Ativa";
+            matricula.situacao = SituacaoMatricula.ATIVA;
             return this;
         }
 
         public MatriculaBuilder doSituacaoCancelada(){
-            matricula.situacao = "Cancelada";
+            matricula.situacao = SituacaoMatricula.CANCELADA;
             return this;
         }
 
         public MatriculaBuilder doSituacaoSuspensa(){
-            matricula.situacao = "Suspensa";
+            matricula.situacao = SituacaoMatricula.SUSPENSA;
             return this;
         }
 

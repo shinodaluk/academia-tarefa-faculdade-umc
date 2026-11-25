@@ -42,7 +42,7 @@ public class MatriculaDao {
             comando.setInt(4, matricula.getFidelidadeMeses());
             comando.setBoolean(5, matricula.isDescontoEstudante());
             comando.setInt(6, matricula.getDiaVencimento());
-            comando.setString(7, matricula.getSituacao());
+            comando.setString(7, matricula.getSituacao().rotulo());
             comando.executeUpdate();
 
             ResultSet chaves = comando.getGeneratedKeys();
@@ -95,7 +95,7 @@ public class MatriculaDao {
             comando.setInt(4, matricula.getFidelidadeMeses());
             comando.setBoolean(5, matricula.isDescontoEstudante());
             comando.setInt(6, matricula.getDiaVencimento());
-            comando.setString(7, matricula.getSituacao());
+            comando.setString(7, matricula.getSituacao().rotulo());
             comando.setInt(8, matricula.getId());
             comando.execute();
         }

@@ -5,9 +5,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import dao.MatriculaDao;
+import config.Dependencias;
 import dao.RegistroNaoEncontradoException;
-import dao.ServicoAdicionalDao;
 import factory.ICommand;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,8 +20,19 @@ import model.Matricula;
 import model.MontadorAdicionais;
 import model.OrcamentoAdicionais;
 import model.ServicoAdicional;
+import repositorio.CatalogoAdicionais;
+import repositorio.Repositorio;
 
 public class CalcularAdicionaisAction implements ICommand {
+
+    private final Repositorio<Matricula> matriculas;
+    private final CatalogoAdicionais adicionais;
+
+    public CalcularAdicionaisAction(Dependencias dependencias) {
+        this.matriculas = dependencias.matriculas();
+        this.adicionais = dependencias.adicionais();
+    }
+
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
         response.setCharacterEncoding("UTF-8");
@@ -71,12 +81,10 @@ public class CalcularAdicionaisAction implements ICommand {
 
         OrcamentoAdicionais orcamento;
         try {
-            Matricula matricula = new MatriculaDao().consultarById(
-                    Matricula.getBuilder().comId(matriculaId).constroi());
-            ServicoAdicionalDao adicionaisDao = new ServicoAdicionalDao();
+            Matricula matricula = matriculas.buscar(matriculaId);
             List<ServicoAdicional> selecionados = new ArrayList<>();
             for (String codigo : codigos) {
-                selecionados.add(adicionaisDao.consultarPorCodigo(codigo));
+                selecionados.add(adicionais.porCodigo(codigo));
             }
             orcamento = OrcamentoAdicionais.calcular(matricula, selecionados);
         } catch (RegistroNaoEncontradoException ex) {

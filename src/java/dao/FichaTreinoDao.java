@@ -33,7 +33,7 @@ public class FichaTreinoDao {
             PreparedStatement comando = con.prepareStatement("INSERT INTO ficha_treino (aluno_id, instrutor_id, objetivo, data_criacao, observacoes) VALUES (?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             comando.setInt(1, ficha.getAlunoId());
             setInstrutor(comando, 2, ficha.getInstrutorId());
-            comando.setString(3, ficha.getObjetivo());
+            comando.setString(3, ficha.getObjetivo().rotulo());
             comando.setDate(4, new java.sql.Date(ficha.getDataCriacao().getTime()));
             comando.setString(5, ficha.getObservacoes());
             comando.executeUpdate();
@@ -70,7 +70,7 @@ public class FichaTreinoDao {
             PreparedStatement comando = con.prepareStatement("UPDATE ficha_treino SET aluno_id = ?, instrutor_id = ?, objetivo = ?, data_criacao = ? WHERE id = ?");
             comando.setInt(1, ficha.getAlunoId());
             setInstrutor(comando, 2, ficha.getInstrutorId());
-            comando.setString(3, ficha.getObjetivo());
+            comando.setString(3, ficha.getObjetivo().rotulo());
             comando.setDate(4, new java.sql.Date(ficha.getDataCriacao().getTime()));
             comando.setInt(5, ficha.getId());
             comando.execute();

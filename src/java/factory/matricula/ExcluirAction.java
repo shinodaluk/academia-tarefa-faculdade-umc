@@ -1,35 +1,41 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.matricula;
 
-import model.Matricula;
-import dao.MatriculaDao;
+import config.Dependencias;
 import factory.ICommand;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import model.Matricula;
+import repositorio.Repositorio;
+import util.Mensagens;
 
-/**
- *
- * @author Shino
- */
 public class ExcluirAction implements ICommand {
+
+    private final Repositorio<Matricula> matriculas;
+
+    public ExcluirAction(Dependencias dependencias) {
+        this.matriculas = dependencias.matriculas();
+    }
+
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String id = request.getParameter("id");
-
-        if(id == null || id.isEmpty()) {
+        if (id == null || id.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/matricula?acao=listar");
             return;
         }
 
-        MatriculaDao matriculaDao = new MatriculaDao();
-        Matricula matricula = Matricula.getBuilder().comId(Integer.parseInt(id)).constroi();
-        // mensalidades somem junto (FK ON DELETE CASCADE)
-        matriculaDao.deletar(matricula);
+        String aviso = "Deletado com sucesso";
+        try {
+            // mensalidades somem junto (FK ON DELETE CASCADE)
+            matriculas.excluir(Integer.parseInt(id));
+        } catch (Exception ex) {
+            aviso = Mensagens.paraUsuario(ex);
+        }
 
-        request.setAttribute("redirect", request.getContextPath() + "/matricula?acao=listar&aviso=Deletado com sucesso");
+        request.setAttribute("redirect", request.getContextPath() + "/matricula?acao=listar&aviso="
+                + URLEncoder.encode(aviso, StandardCharsets.UTF_8));
         request.getRequestDispatcher("redirect.jsp").forward(request, response);
     }
 }

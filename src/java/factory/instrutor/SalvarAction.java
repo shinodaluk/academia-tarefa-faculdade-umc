@@ -1,26 +1,25 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.instrutor;
 
-import model.Instrutor;
-import dao.InstrutorDao;
+import config.Dependencias;
 import factory.ICommand;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import model.Instrutor;
+import repositorio.Repositorio;
 import util.Mensagens;
 
-/**
- *
- * @author Shino
- */
 public class SalvarAction implements ICommand {
+
+    private final Repositorio<Instrutor> instrutores;
+
+    public SalvarAction(Dependencias dependencias) {
+        this.instrutores = dependencias.instrutores();
+    }
+
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        InstrutorDao instrutorDao = new InstrutorDao();
         String id = request.getParameter("id");
         boolean novo = id == null || id.isEmpty();
 
@@ -33,18 +32,18 @@ public class SalvarAction implements ICommand {
                     .comEmail(request.getParameter("email"))
                     .comStatus(request.getParameter("status"));
 
-            if(novo) {
-                int newId = instrutorDao.cadastrar(builder.constroi());
-                id = String.valueOf(newId);
+            if (novo) {
+                id = String.valueOf(instrutores.criar(builder.constroi()));
             } else {
-                instrutorDao.atualizar(builder.comId(Integer.parseInt(id)).constroi());
+                instrutores.atualizar(builder.comId(Integer.parseInt(id)).constroi());
             }
 
             request.setAttribute("redirect", request.getContextPath() + "/instrutor?acao=editar&id=" + id);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         } catch (Exception ex) {
+            // volta para a mesma tela (criar ou editar), sem perder o contexto da edição
             String erro = URLEncoder.encode(Mensagens.paraUsuario(ex), StandardCharsets.UTF_8);
-            String volta = novo ? "acao=criar" : "acao=editar&id=" + id;
+            String volta = novo ? "acao=criar" : "acao=editar&id=" + URLEncoder.encode(id, StandardCharsets.UTF_8);
             request.setAttribute("redirect", request.getContextPath() + "/instrutor?" + volta + "&erro=" + erro);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         }

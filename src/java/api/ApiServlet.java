@@ -1,18 +1,8 @@
 package api;
 
-import api.repositorio.AlunoRepositorioJdbc;
-import api.repositorio.FichaTreinoRepositorioJdbc;
-import api.repositorio.InstrutorRepositorioJdbc;
-import api.repositorio.MatriculaRepositorioJdbc;
-import api.repositorio.PlanoRepositorioJdbc;
+import config.Dependencias;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import dao.AlunoDao;
-import dao.FichaTreinoDao;
-import dao.InstrutorDao;
-import dao.MatriculaDao;
-import dao.PlanoDao;
-import dao.ServicoAdicionalDao;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
@@ -37,23 +27,20 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init() {
-        gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
-
-        Repositorio<Matricula> matriculas = new MatriculaRepositorioJdbc(new MatriculaDao());
-        ServicoAdicionalDao adicionais = new ServicoAdicionalDao();
+        // resposta é application/json, não HTML: o escape de ' < > do Gson só atrapalharia a leitura
+        gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").disableHtmlEscaping().create();
+        Dependencias dependencias = Dependencias.jdbc();
 
         roteador = new RoteadorApi(Map.of(
-                "alunos", new ControladorRest<>(Aluno.class,
-                        new AlunoRepositorioJdbc(new AlunoDao()), Validacoes.aluno(), gson),
-                "planos", new ControladorRest<>(Plano.class,
-                        new PlanoRepositorioJdbc(new PlanoDao()), Validacoes.plano(), gson),
+                "alunos", new ControladorRest<>(Aluno.class, dependencias.alunos(), Validacoes.aluno(), gson),
+                "planos", new ControladorRest<>(Plano.class, dependencias.planos(), Validacoes.plano(), gson),
                 "instrutores", new ControladorRest<>(Instrutor.class,
-                        new InstrutorRepositorioJdbc(new InstrutorDao()), Validacoes.instrutor(), gson),
-                "matriculas", new ControladorRest<>(Matricula.class, matriculas, Validacoes.matricula(), gson)
-                        .comSubrecurso("adicionais",
-                                new AdicionaisMatriculaRecurso(matriculas::buscar, adicionais::consultarPorCodigo)),
-                "fichas", new ControladorRest<>(FichaTreino.class,
-                        new FichaTreinoRepositorioJdbc(new FichaTreinoDao()), Validacoes.ficha(), gson)
+                        dependencias.instrutores(), Validacoes.instrutor(), gson),
+                "matriculas", new ControladorRest<>(Matricula.class,
+                        dependencias.matriculas(), Validacoes.matricula(), gson)
+                        .comSubrecurso("adicionais", new AdicionaisMatriculaRecurso(
+                                dependencias.matriculas()::buscar, dependencias.adicionais()::porCodigo)),
+                "fichas", new ControladorRest<>(FichaTreino.class, dependencias.fichas(), Validacoes.ficha(), gson)
                         .comNormalizador(new NormalizacaoFicha())));
     }
 

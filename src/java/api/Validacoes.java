@@ -13,10 +13,6 @@ import model.Plano;
 /** Validadores de entrada da API, espelhando as restrições do esquema SQL. */
 public final class Validacoes {
 
-    private static final List<String> STATUS = List.of("Ativo", "Inativo");
-    private static final List<String> ESPECIALIDADES = List.of("Musculação", "Funcional", "Condicionamento", "Pilates");
-    private static final List<String> SITUACOES = List.of("Ativa", "Cancelada", "Suspensa");
-    private static final List<String> OBJETIVOS = List.of("Hipertrofia", "Emagrecimento", "Condicionamento");
     private static final List<Integer> FIDELIDADES = List.of(0, 6, 12);
 
     private Validacoes() {
@@ -43,7 +39,7 @@ public final class Validacoes {
             texto(erros, aluno.getNome(), "nome");
             cpf(erros, aluno.getCpf());
             presente(erros, aluno.getDataNascimento(), "dataNascimento");
-            umDe(erros, aluno.getStatus(), STATUS, "status");
+            obrigatorio(erros, aluno.getStatus(), "status");
             return erros;
         };
     }
@@ -53,8 +49,8 @@ public final class Validacoes {
             List<String> erros = new ArrayList<>();
             texto(erros, instrutor.getNome(), "nome");
             texto(erros, instrutor.getCref(), "cref");
-            umDe(erros, instrutor.getEspecialidade(), ESPECIALIDADES, "especialidade");
-            umDe(erros, instrutor.getStatus(), STATUS, "status");
+            obrigatorio(erros, instrutor.getEspecialidade(), "especialidade");
+            obrigatorio(erros, instrutor.getStatus(), "status");
             return erros;
         };
     }
@@ -71,7 +67,7 @@ public final class Validacoes {
             if (matricula.getDiaVencimento() < 1 || matricula.getDiaVencimento() > 28) {
                 erros.add("diaVencimento deve estar entre 1 e 28");
             }
-            umDe(erros, matricula.getSituacao(), SITUACOES, "situacao");
+            obrigatorio(erros, matricula.getSituacao(), "situacao");
             return erros;
         };
     }
@@ -80,7 +76,7 @@ public final class Validacoes {
         return ficha -> {
             List<String> erros = new ArrayList<>();
             positivo(erros, ficha.getAlunoId(), "alunoId");
-            umDe(erros, ficha.getObjetivo(), OBJETIVOS, "objetivo");
+            obrigatorio(erros, ficha.getObjetivo(), "objetivo");
             presente(erros, ficha.getDataCriacao(), "dataCriacao");
             if (ficha.getExercicios() == null) {
                 erros.add("exercicios deve ser uma lista");
@@ -130,9 +126,10 @@ public final class Validacoes {
         }
     }
 
-    private static void umDe(List<String> erros, String valor, List<String> permitidos, String campo) {
-        if (valor == null || !permitidos.contains(valor)) {
-            erros.add(campo + " deve ser um de " + permitidos);
+    // valor fora da lista já é barrado ao converter o texto no enum
+    private static void obrigatorio(List<String> erros, Object valor, String campo) {
+        if (valor == null) {
+            erros.add(campo + " é obrigatório");
         }
     }
 }

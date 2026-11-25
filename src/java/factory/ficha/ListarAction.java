@@ -1,37 +1,30 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.ficha;
 
-import model.FichaTreino;
-import dao.FichaTreinoDao;
+import com.google.gson.Gson;
+import config.Dependencias;
 import factory.ICommand;
-import java.sql.SQLException;
-import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.google.gson.Gson;
-import util.TextoSeguro;
+import model.FichaTreino;
+import repositorio.Filtros;
+import repositorio.Repositorio;
 import util.Mensagens;
+import util.TextoSeguro;
 
-/**
- *
- * @author Shino
- */
 public class ListarAction implements ICommand {
+
+    private final Repositorio<FichaTreino> fichas;
+
+    public ListarAction(Dependencias dependencias) {
+        this.fichas = dependencias.fichas();
+    }
 
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        FichaTreinoDao fichaDao = new FichaTreinoDao();
-        Gson gson = new Gson();
-        String objetivo = request.getParameter("objetivo");
         request.setAttribute("aviso", TextoSeguro.paraScript(request.getParameter("aviso")));
-
         try {
-            List<FichaTreino> listaFicha = fichaDao.consultarTodos(objetivo);
-            request.setAttribute("fichasJson", gson.toJson(listaFicha));
-        } catch (ClassNotFoundException | SQLException ex) {
+            request.setAttribute("fichasJson", new Gson().toJson(fichas.listar(Filtros.de("objetivo", request.getParameter("objetivo")))));
+        } catch (Exception ex) {
             request.setAttribute("fichasJson", "[]");
             request.setAttribute("aviso", TextoSeguro.paraScript(Mensagens.paraUsuario(ex)));
         }

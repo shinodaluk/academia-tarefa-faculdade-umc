@@ -34,7 +34,7 @@ public class AlunoDao {
             comando.setDate(3, new java.sql.Date(aluno.getDataNascimento().getTime()));
             comando.setString(4, aluno.getTelefone());
             comando.setString(5, aluno.getEmail());
-            comando.setString(6, aluno.getStatus());
+            comando.setString(6, aluno.getStatus().rotulo());
             comando.executeUpdate();
         
             ResultSet rs = comando.getGeneratedKeys();
@@ -69,7 +69,7 @@ public class AlunoDao {
             comando.setDate(3,  new java.sql.Date(aluno.getDataNascimento().getTime()));
             comando.setString(4, aluno.getTelefone());
             comando.setString(5, aluno.getEmail());
-            comando.setString(6, aluno.getStatus());
+            comando.setString(6, aluno.getStatus().rotulo());
             comando.setInt(7, aluno.getId());
             comando.execute();
         }

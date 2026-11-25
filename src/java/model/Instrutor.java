@@ -14,10 +14,10 @@ public class Instrutor {
     private int id;
     private String nome;
     private String cref;
-    private String especialidade;
+    private Especialidade especialidade;
     private String telefone;
     private String email;
-    private String status;
+    private StatusCadastro status;
     private Date criado_em;
 
     private int fichasVinculadas;
@@ -28,10 +28,10 @@ public class Instrutor {
     public int getId() { return id; }
     public String getNome() { return nome; }
     public String getCref() { return cref; }
-    public String getEspecialidade() { return especialidade; }
+    public Especialidade getEspecialidade() { return especialidade; }
     public String getTelefone() { return telefone; }
     public String getEmail() { return email; }
-    public String getStatus() { return status; }
+    public StatusCadastro getStatus() { return status; }
     public Date getCriadoEm() { return criado_em; }
     public int getFichasVinculadas() { return fichasVinculadas; }
 
@@ -59,27 +59,27 @@ public class Instrutor {
         }
 
         public InstrutorBuilder comEspecialidade(String especialidade){
-            instrutor.especialidade = especialidade;
+            instrutor.especialidade = Rotulos.de(Especialidade.class, especialidade);
             return this;
         }
 
         public InstrutorBuilder doEspecialidadeMusculacao(){
-            instrutor.especialidade = "Musculação";
+            instrutor.especialidade = Especialidade.MUSCULACAO;
             return this;
         }
 
         public InstrutorBuilder doEspecialidadeFuncional(){
-            instrutor.especialidade = "Funcional";
+            instrutor.especialidade = Especialidade.FUNCIONAL;
             return this;
         }
 
         public InstrutorBuilder doEspecialidadeCondicionamento(){
-            instrutor.especialidade = "Condicionamento";
+            instrutor.especialidade = Especialidade.CONDICIONAMENTO;
             return this;
         }
 
         public InstrutorBuilder doEspecialidadePilates(){
-            instrutor.especialidade = "Pilates";
+            instrutor.especialidade = Especialidade.PILATES;
             return this;
         }
 
@@ -94,17 +94,17 @@ public class Instrutor {
         }
 
         public InstrutorBuilder comStatus(String status){
-            instrutor.status = status;
+            instrutor.status = Rotulos.de(StatusCadastro.class, status);
             return this;
         }
 
         public InstrutorBuilder doStatusAtivo(){
-            instrutor.status = "Ativo";
+            instrutor.status = StatusCadastro.ATIVO;
             return this;
         }
 
         public InstrutorBuilder doStatusInativo(){
-            instrutor.status = "Inativo";
+            instrutor.status = StatusCadastro.INATIVO;
             return this;
         }
 

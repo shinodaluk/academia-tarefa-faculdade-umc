@@ -1,12 +1,6 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package factory.ficha;
 
-import model.FichaExercicio;
-import model.FichaTreino;
-import dao.FichaTreinoDao;
+import config.Dependencias;
 import factory.ICommand;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -15,42 +9,44 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import model.FichaExercicio;
+import model.FichaTreino;
+import repositorio.Repositorio;
 import util.Mensagens;
 
-/**
- *
- * @author Shino
- */
 public class SalvarAction implements ICommand {
+
+    private final Repositorio<FichaTreino> fichas;
+
+    public SalvarAction(Dependencias dependencias) {
+        this.fichas = dependencias.fichas();
+    }
+
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        FichaTreinoDao fichaDao = new FichaTreinoDao();
         String id = request.getParameter("id");
         boolean novo = id == null || id.isEmpty();
 
         try {
-            String instrutorId = request.getParameter("instrutorId");
-            String dataCriacao = request.getParameter("dataCriacao");
-
             FichaTreino.FichaTreinoBuilder builder = FichaTreino.getBuilder()
                     .comAlunoId(Integer.parseInt(request.getParameter("alunoId")))
-                    .comInstrutorId(instrutorId == null || instrutorId.isEmpty() ? null : Integer.valueOf(instrutorId))
+                    .comInstrutorId(vazio(request.getParameter("instrutorId")) ? null : Integer.valueOf(request.getParameter("instrutorId")))
                     .comObjetivo(request.getParameter("objetivo"))
-                    .comDataCriacao(dataCriacao == null || dataCriacao.isEmpty() ? LocalDate.now().toString() : dataCriacao)
+                    .comDataCriacao(vazio(request.getParameter("dataCriacao")) ? LocalDate.now().toString() : request.getParameter("dataCriacao"))
                     .comExercicios(lerExercicios(request));
 
-            if(novo) {
-                int newId = fichaDao.cadastrar(builder.constroi());
-                id = String.valueOf(newId);
+            if (novo) {
+                id = String.valueOf(fichas.criar(builder.constroi()));
             } else {
-                fichaDao.atualizar(builder.comId(Integer.parseInt(id)).constroi());
+                fichas.atualizar(builder.comId(Integer.parseInt(id)).constroi());
             }
 
             request.setAttribute("redirect", request.getContextPath() + "/ficha?acao=editar&id=" + id);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         } catch (Exception ex) {
+            // volta para a mesma tela (criar ou editar), sem perder o contexto da edição
             String erro = URLEncoder.encode(Mensagens.paraUsuario(ex), StandardCharsets.UTF_8);
-            String volta = novo ? "acao=criar" : "acao=editar&id=" + id;
+            String volta = novo ? "acao=criar" : "acao=editar&id=" + URLEncoder.encode(id, StandardCharsets.UTF_8);
             request.setAttribute("redirect", request.getContextPath() + "/ficha?" + volta + "&erro=" + erro);
             request.getRequestDispatcher("redirect.jsp").forward(request, response);
         }
@@ -67,9 +63,13 @@ public class SalvarAction implements ICommand {
                     .comNome(request.getParameter(prefixo + "nome"))
                     .comSeries(Integer.parseInt(request.getParameter(prefixo + "series")))
                     .comRepeticoes(request.getParameter(prefixo + "repeticoes"))
-                    .comCargaKg(carga == null || carga.isEmpty() ? null : carga)
+                    .comCargaKg(vazio(carga) ? null : carga)
                     .constroi());
         }
         return exercicios;
+    }
+
+    private static boolean vazio(String texto) {
+        return texto == null || texto.isEmpty();
     }
 }

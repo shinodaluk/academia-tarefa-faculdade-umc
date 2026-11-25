@@ -1,12 +1,13 @@
-package api.repositorio;
+package repositorio.jdbc;
 
-import api.Repositorio;
+import repositorio.Filtros;
+import repositorio.Repositorio;
 import dao.AlunoDao;
 import java.util.List;
 import java.util.Map;
 import model.Aluno;
 
-/** Adapta o AlunoDao à interface usada pela API. Filtros: ?busca=&status= */
+/** Adapta o AlunoDao à interface Repositorio (API e telas). Filtros: ?busca=&status= */
 public class AlunoRepositorioJdbc implements Repositorio<Aluno> {
 
     private final AlunoDao dao;
@@ -17,7 +18,7 @@ public class AlunoRepositorioJdbc implements Repositorio<Aluno> {
 
     @Override
     public List<Aluno> listar(Map<String, String> filtros) throws Exception {
-        return dao.consultarTodos(filtros.getOrDefault("busca", ""), filtros.getOrDefault("status", ""));
+        return dao.consultarTodos(Filtros.valor(filtros, "busca"), Filtros.valor(filtros, "status"));
     }
 
     @Override

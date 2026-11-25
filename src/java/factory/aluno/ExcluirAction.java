@@ -1,15 +1,22 @@
 package factory.aluno;
 
-import dao.AlunoDao;
+import config.Dependencias;
 import factory.ICommand;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.Aluno;
+import repositorio.Repositorio;
 import util.Mensagens;
 
 public class ExcluirAction implements ICommand {
+
+    private final Repositorio<Aluno> alunos;
+
+    public ExcluirAction(Dependencias dependencias) {
+        this.alunos = dependencias.alunos();
+    }
 
     @Override
     public void executar(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -22,7 +29,7 @@ public class ExcluirAction implements ICommand {
         String aviso = "Deletado com sucesso";
         try {
             // matrículas e fichas do aluno somem junto (FK ON DELETE CASCADE)
-            new AlunoDao().deletar(Aluno.getBuilder().comId(Integer.parseInt(id)).constroi());
+            alunos.excluir(Integer.parseInt(id));
         } catch (Exception ex) {
             aviso = Mensagens.paraUsuario(ex);
         }

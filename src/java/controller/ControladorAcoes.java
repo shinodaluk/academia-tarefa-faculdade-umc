@@ -1,5 +1,6 @@
 package controller;
 
+import config.Dependencias;
 import factory.AcaoNaoEncontradaException;
 import factory.FabricaAcoes;
 import factory.ICommand;
@@ -17,9 +18,15 @@ public abstract class ControladorAcoes extends HttpServlet {
     private static final Set<String> SO_POST = Set.of("salvar", "excluir");
 
     private final String recurso;
+    private transient Dependencias dependencias;
 
     protected ControladorAcoes(String recurso) {
         this.recurso = recurso;
+    }
+
+    @Override
+    public void init() {
+        dependencias = Dependencias.jdbc();
     }
 
     @Override
@@ -53,7 +60,7 @@ public abstract class ControladorAcoes extends HttpServlet {
         }
         ICommand comando;
         try {
-            comando = FabricaAcoes.criar(recurso, acao);
+            comando = FabricaAcoes.criar(recurso, acao, dependencias);
         } catch (AcaoNaoEncontradaException ex) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
