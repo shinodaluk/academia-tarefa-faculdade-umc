@@ -32,7 +32,9 @@ public class ApiServlet extends HttpServlet {
         Dependencias dependencias = Dependencias.jdbc();
 
         roteador = new RoteadorApi(Map.of(
-                "alunos", new ControladorRest<>(Aluno.class, dependencias.alunos(), Validacoes.aluno(), gson),
+                "alunos", new ControladorRest<>(Aluno.class, dependencias.alunos(), Validacoes.aluno(), gson)
+                        .comSubrecurso("avaliacao", new AvaliacaoFisicaRecurso(dependencias.alunos(),
+                                dependencias.avaliacoes(), Validacoes.avaliacaoFisica(), gson)),
                 "planos", new ControladorRest<>(Plano.class, dependencias.planos(), Validacoes.plano(), gson),
                 "instrutores", new ControladorRest<>(Instrutor.class,
                         dependencias.instrutores(), Validacoes.instrutor(), gson),

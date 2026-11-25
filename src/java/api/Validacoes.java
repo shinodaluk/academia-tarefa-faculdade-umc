@@ -1,8 +1,11 @@
 package api;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import model.Aluno;
+import model.AvaliacaoFisica;
 import model.Cpf;
 import model.FichaExercicio;
 import model.FichaTreino;
@@ -14,6 +17,7 @@ import model.Plano;
 public final class Validacoes {
 
     private static final List<Integer> FIDELIDADES = List.of(0, 6, 12);
+    private static final Pattern PRESSAO = Pattern.compile("[0-9]{2,3}/[0-9]{2,3}");
 
     private Validacoes() {
     }
@@ -95,6 +99,39 @@ public final class Validacoes {
             }
             return erros;
         };
+    }
+
+    public static Validador<AvaliacaoFisica> avaliacaoFisica() {
+        return avaliacao -> {
+            List<String> erros = new ArrayList<>();
+            presente(erros, avaliacao.getDataAvaliacao(), "dataAvaliacao");
+            faixa(erros, avaliacao.getPesoKg(), true, "1", "400", "pesoKg");
+            faixa(erros, avaliacao.getAlturaM(), true, "0.5", "2.6", "alturaM");
+            faixa(erros, avaliacao.getPercentualGordura(), false, "0", "70", "percentualGordura");
+            faixa(erros, avaliacao.getMassaMagraKg(), false, "1", "400", "massaMagraKg");
+            faixa(erros, avaliacao.getCinturaCm(), false, "30", "250", "cinturaCm");
+            String pressao = avaliacao.getPressaoArterial();
+            if (pressao != null && !PRESSAO.matcher(pressao).matches()) {
+                erros.add("pressaoArterial deve seguir o formato 120/80");
+            }
+            Integer frequencia = avaliacao.getFrequenciaCardiaca();
+            if (frequencia != null && (frequencia < 20 || frequencia > 250)) {
+                erros.add("frequenciaCardiaca deve estar entre 20 e 250");
+            }
+            return erros;
+        };
+    }
+
+    // limites cabem nas colunas DECIMAL do esquema
+    private static void faixa(List<String> erros, BigDecimal valor, boolean obrigatorio,
+            String minimo, String maximo, String campo) {
+        if (valor == null && !obrigatorio) {
+            return;
+        }
+        if (valor == null || valor.compareTo(new BigDecimal(minimo)) < 0
+                || valor.compareTo(new BigDecimal(maximo)) > 0) {
+            erros.add(campo + " deve estar entre " + minimo + " e " + maximo);
+        }
     }
 
     // o formato já é garantido pelo Cpf; aqui só os dígitos verificadores

@@ -22,6 +22,7 @@ public final class DependenciasFalsas {
     public final RepositorioFalso<Instrutor> instrutores = new RepositorioFalso<>();
     public final RepositorioFalso<Matricula> matriculas = new RepositorioFalso<>();
     public final RepositorioFalso<FichaTreino> fichas = new RepositorioFalso<>();
+    public final AvaliacoesFisicasFalsas avaliacoes = new AvaliacoesFisicasFalsas();
     public final Map<String, Number> indicadores = new HashMap<>();
     public final List<ServicoAdicional> adicionais = new ArrayList<>();
 
@@ -38,6 +39,6 @@ public final class DependenciasFalsas {
                         .orElseThrow(() -> new RegistroNaoEncontradoException("Adicional não cadastrado: " + codigo));
             }
         };
-        return new Dependencias(alunos, planos, instrutores, matriculas, fichas, () -> indicadores, catalogo);
+        return new Dependencias(alunos, planos, instrutores, matriculas, fichas, avaliacoes, () -> indicadores, catalogo);
     }
 }

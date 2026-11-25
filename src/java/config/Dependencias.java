@@ -1,6 +1,7 @@
 package config;
 
 import dao.AlunoDao;
+import dao.AvaliacaoFisicaDao;
 import dao.FichaTreinoDao;
 import dao.InstrutorDao;
 import dao.MatriculaDao;
@@ -11,10 +12,12 @@ import model.FichaTreino;
 import model.Instrutor;
 import model.Matricula;
 import model.Plano;
+import repositorio.AvaliacoesFisicas;
 import repositorio.CatalogoAdicionais;
 import repositorio.IndicadoresAlunos;
 import repositorio.Repositorio;
 import repositorio.jdbc.AlunoRepositorioJdbc;
+import repositorio.jdbc.AvaliacoesFisicasJdbc;
 import repositorio.jdbc.CatalogoAdicionaisJdbc;
 import repositorio.jdbc.FichaTreinoRepositorioJdbc;
 import repositorio.jdbc.InstrutorRepositorioJdbc;
@@ -31,6 +34,7 @@ public record Dependencias(
         Repositorio<Instrutor> instrutores,
         Repositorio<Matricula> matriculas,
         Repositorio<FichaTreino> fichas,
+        AvaliacoesFisicas avaliacoes,
         IndicadoresAlunos indicadoresAlunos,
         CatalogoAdicionais adicionais) {
 
@@ -42,6 +46,7 @@ public record Dependencias(
                 new InstrutorRepositorioJdbc(new InstrutorDao()),
                 new MatriculaRepositorioJdbc(new MatriculaDao()),
                 new FichaTreinoRepositorioJdbc(new FichaTreinoDao()),
+                new AvaliacoesFisicasJdbc(new AvaliacaoFisicaDao()),
                 alunoDao::alunosAtivos,
                 new CatalogoAdicionaisJdbc(new ServicoAdicionalDao()));
     }

@@ -3,9 +3,11 @@ package api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import model.Aluno;
+import model.AvaliacaoFisica;
 import model.Dinheiro;
 import model.FichaExercicio;
 import model.FichaTreino;
@@ -121,5 +123,32 @@ class ValidacoesTest {
         return Matricula.getBuilder().comAlunoId(1).comPlanoId(1).comDataInicio("2026-11-01")
                 .comFidelidadeMeses(fidelidade).comDiaVencimento(diaVencimento).comSituacao("Ativa")
                 .constroi();
+    }
+
+    @Test
+    @DisplayName("Avaliação física com data, peso e altura é válida")
+    void avaliacaoValida() {
+        AvaliacaoFisica avaliacao = AvaliacaoFisica.getBuilder().comDataAvaliacao("2026-02-10")
+                .comPesoKg(new BigDecimal("78.4")).comAlturaM(new BigDecimal("1.76"))
+                .comPressaoArterial("120/80").comFrequenciaCardiaca(64).constroi();
+
+        assertTrue(Validacoes.avaliacaoFisica().validar(avaliacao).isEmpty());
+    }
+
+    @Test
+    @DisplayName("Avaliação sem data, peso e altura e com medidas fora da faixa acumula erros")
+    void avaliacaoInvalida() {
+        AvaliacaoFisica avaliacao = AvaliacaoFisica.getBuilder()
+                .comPercentualGordura(new BigDecimal("90")).comPressaoArterial("12x8")
+                .comFrequenciaCardiaca(5).constroi();
+
+        assertEquals(List.of(
+                "dataAvaliacao é obrigatório (formato yyyy-MM-dd)",
+                "pesoKg deve estar entre 1 e 400",
+                "alturaM deve estar entre 0.5 e 2.6",
+                "percentualGordura deve estar entre 0 e 70",
+                "pressaoArterial deve seguir o formato 120/80",
+                "frequenciaCardiaca deve estar entre 20 e 250"),
+                Validacoes.avaliacaoFisica().validar(avaliacao));
     }
 }

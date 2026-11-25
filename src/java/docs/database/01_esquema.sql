@@ -129,6 +129,27 @@ CREATE TABLE IF NOT EXISTS ficha_exercicio (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
+-- Avaliação física: relacionamento 1:1 com aluno (aluno_id UNIQUE)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS avaliacao_fisica (
+  id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  aluno_id            INT UNSIGNED  NOT NULL UNIQUE,
+  data_avaliacao      DATE          NOT NULL,
+  peso_kg             DECIMAL(5,2)  NOT NULL,
+  altura_m            DECIMAL(3,2)  NOT NULL,
+  percentual_gordura  DECIMAL(4,1)  NULL,
+  massa_magra_kg      DECIMAL(5,2)  NULL,
+  cintura_cm          DECIMAL(5,1)  NULL,
+  pressao_arterial    VARCHAR(7)    NULL,                -- 120/80
+  frequencia_cardiaca SMALLINT UNSIGNED NULL,            -- bpm em repouso
+  observacoes         VARCHAR(255)  NULL,
+  atualizado_em       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_avaliacao_aluno FOREIGN KEY (aluno_id) REFERENCES aluno(id) ON DELETE CASCADE,
+  CONSTRAINT ck_avaliacao_peso CHECK (peso_kg > 0),
+  CONSTRAINT ck_avaliacao_altura CHECK (altura_m > 0)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
 -- Visão de apoio: mensalidade calculada da matrícula
 -- (desconto de fidelidade 6m = 5%, 12m = 10%; estudante = 15%)
 -- ---------------------------------------------------------------------

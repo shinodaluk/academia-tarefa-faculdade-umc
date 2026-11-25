@@ -2,10 +2,7 @@ package api;
 
 import repositorio.Repositorio;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,34 +96,13 @@ public class ControladorRest<T> implements RecursoApi {
 
     // o id vem sempre da URL; o do corpo é descartado
     private T lerCorpo(RequisicaoApi requisicao, Integer id) {
-        if (requisicao.corpo().isBlank()) {
-            throw ErroApi.requisicaoInvalida("O corpo da requisição deve ser um objeto JSON.");
-        }
-        T entidade;
-        try {
-            JsonElement elemento = JsonParser.parseString(requisicao.corpo());
-            if (!elemento.isJsonObject()) {
-                throw ErroApi.requisicaoInvalida("O corpo da requisição deve ser um objeto JSON.");
-            }
-            JsonObject json = elemento.getAsJsonObject();
+        return CorpoJson.ler(gson, requisicao.corpo(), tipo, json -> {
             json.remove("id");
             if (id != null) {
                 json.addProperty("id", id);
             }
             normalizador.accept(json);
-            entidade = gson.fromJson(json, tipo);
-        } catch (JsonParseException | NumberFormatException ex) {
-            throw ErroApi.requisicaoInvalida("JSON inválido ou com tipo de campo incorreto.");
-        } catch (IllegalArgumentException ex) {
-            // objeto de valor recusou o campo (ex.: Dinheiro negativo, CPF fora do formato)
-            throw ErroApi.dadosInvalidos(List.of(ex.getMessage()));
-        }
-
-        List<String> erros = validador.validar(entidade);
-        if (!erros.isEmpty()) {
-            throw ErroApi.dadosInvalidos(erros);
-        }
-        return entidade;
+        }, validador);
     }
 
     static int lerId(String segmento) {
