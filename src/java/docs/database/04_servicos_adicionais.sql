@@ -1,3 +1,6 @@
+-- acentos dos ENUMs e dados: o cliente precisa enviar em UTF-8
+SET NAMES utf8mb4;
+
 -- Execute este script em bancos academia já existentes para habilitar os decorators.
 USE academia;
 

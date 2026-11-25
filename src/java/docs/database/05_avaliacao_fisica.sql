@@ -1,3 +1,6 @@
+-- acentos dos ENUMs e dados: o cliente precisa enviar em UTF-8
+SET NAMES utf8mb4;
+
 -- Execute em bancos academia já existentes para criar a avaliação física (1:1 com aluno).
 USE academia;
 

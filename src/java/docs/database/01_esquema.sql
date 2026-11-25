@@ -1,3 +1,6 @@
+-- acentos dos ENUMs e dados: o cliente precisa enviar em UTF-8
+SET NAMES utf8mb4;
+
 -- =====================================================================
 -- Sistema de Academia — Esquema do banco de dados
 -- Compatível com MySQL 8 / MariaDB 10.5+

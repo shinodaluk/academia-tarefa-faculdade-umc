@@ -1,0 +1,37 @@
+# Sobe a aplicação completa: docker compose up -d --build
+# App em http://localhost:${APP_PORT:-8080}/WebApplication1/
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ACADEMIA_DB_PASSWORD:-sistema_root_dev}
+    # executados só na primeira subida (volume vazio), em ordem alfabética
+    volumes:
+      - ./src/java/docs/database/01_esquema.sql:/docker-entrypoint-initdb.d/01_esquema.sql:ro
+      - ./src/java/docs/database/03_procedimentos_e_dados.sql:/docker-entrypoint-initdb.d/03_procedimentos_e_dados.sql:ro
+      - ./src/java/docs/database/04_servicos_adicionais.sql:/docker-entrypoint-initdb.d/04_servicos_adicionais.sql:ro
+      - ./src/java/docs/database/05_avaliacao_fisica.sql:/docker-entrypoint-initdb.d/05_avaliacao_fisica.sql:ro
+      - dados:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ACADEMIA_DB_URL: jdbc:mysql://db:3306/academia
+      ACADEMIA_DB_USER: root
+      ACADEMIA_DB_PASSWORD: ${ACADEMIA_DB_PASSWORD:-sistema_root_dev}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+volumes:
+  dados:
